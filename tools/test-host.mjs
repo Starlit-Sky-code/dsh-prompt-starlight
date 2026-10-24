@@ -1,0 +1,315 @@
+/**
+ * Host 半部集成测试（无 DSH 依赖）：用假 webServer / 假 llm 驱动真实路由处理函数。
+ * 跑法：node tools/test-host.mjs
+ */
+import fs from 'node:fs'
+import os from 'node:os'
+import path from 'node:path'
+
+const tempDir = fs.mkdtempSync(path.join(os.tmpdir(), 'starlight-test-'))
+process.env.STARLIGHT_CONFIG_FILE = path.join(tempDir, 'starlight-prompt.json')
+process.env.DSH_HOME = tempDir
+
+const { default: plugin } = await import('../lib/index.js')
+const rules = await import('../lib/rules.js')
+
+let failures = 0
+let passes = 0
+function check(name, condition, detail) {
+  if (condition) {
+    passes += 1
+    console.log(`  ok   ${name}`)
+  } else {
+    failures += 1
+    console.log(`  FAIL ${name}${detail === undefined ? '' : ` — ${detail}`}`)
+  }
+}
+
+/* ------------------------------------------------------------------ */
+/* 假宿主                                                              */
+/* ------------------------------------------------------------------ */
+
+const routes = []
+
+function makeCtx(overrides = {}) {
+  const services = {
+    llm: {
+      listProviders: () => ['deepseek-account'],
+      listModels: async () => [{ provider: 'deepseek-account', id: 'deepseek-flash', name: 'Flash' }],
+      stream(options) {
+        const text = harness.llmReply
+        const fail = harness.llmFail
+        return (async function* () {
+          if (fail) throw new Error(fail)
+          // 故意把答案切成多片，验证逐片拼接
+          for (let i = 0; i < text.length; i += 7) {
+            yield { type: 'text-delta', index: 0, text: text.slice(i, i + 7) }
+          }
+          yield { type: 'finish', kind: 'stop', usage: { outputTokens: 42 } }
+        })()
+      },
+    },
+    agentDefaultModel: { currentSelection: () => ({ provider: 'deepseek-account', model: 'deepseek-flash' }) },
+    connection: { requestRejection: () => null },
+    ...overrides,
+  }
+  return {
+    get: (name) => services[name],
+    effect: () => () => {},
+  }
+}
+
+const harness = { llmReply: '', llmFail: '' }
+
+function loadPlugin(overrides) {
+  routes.length = 0
+  const ctx = makeCtx(overrides)
+  plugin.apply({
+    inject: (deps, callback) => {
+      for (const dep of deps) {
+        if (ctx.get(dep) === undefined) throw new Error(`missing service ${dep}`)
+      }
+      callback(ctx)
+    },
+  })
+  return ctx
+}
+
+function fakeRequest({ method = 'GET', headers = {}, body } = {}) {
+  const payload = body === undefined ? null : Buffer.from(JSON.stringify(body))
+  return {
+    method,
+    headers: { host: '127.0.0.1:19387', ...headers },
+    async *[Symbol.asyncIterator]() {
+      if (payload !== null) yield payload
+    },
+  }
+}
+
+function fakeResponse() {
+  const record = { status: 0, headers: null, body: '' }
+  return {
+    record,
+    writeHead(status, headers) {
+      record.status = status
+      record.headers = headers
+    },
+    end(chunk) {
+      if (chunk !== undefined) record.body += String(chunk)
+    },
+  }
+}
+
+async function call({ kind = 'exact', path: routePath, ...requestInit }) {
+  const entry = routes.find((item) => item.kind === kind && item.path === routePath)
+  if (entry === undefined) throw new Error(`route not registered: ${routePath}`)
+  const req = fakeRequest(requestInit)
+  const res = fakeResponse()
+  await entry.handler(req, res)
+  let json = null
+  try {
+    json = JSON.parse(res.record.body)
+  } catch {}
+  return { status: res.record.status, json, raw: res.record.body }
+}
+
+/* ------------------------------------------------------------------ */
+/* 1. 插件形状                                                         */
+/* ------------------------------------------------------------------ */
+
+console.log('\n[1] 插件形状')
+routes.length = 0
+const ctx = makeCtx()
+plugin.apply({
+  inject: (deps, cb) => {
+    const services = {
+      webServer: {
+        register(route) {
+          routes.push(route)
+          return () => {
+            const index = routes.indexOf(route)
+            if (index >= 0) routes.splice(index, 1)
+          }
+        },
+      },
+      llm: ctx.get('llm'),
+      agentDefaultModel: ctx.get('agentDefaultModel'),
+    }
+    cb({ get: (name) => services[name], effect: () => () => {} })
+  },
+})
+check('name 为 dsh-prompt-starlight', plugin.name === 'dsh-prompt-starlight', plugin.name)
+check('注册了 5 条路由', routes.length === 5, String(routes.length))
+check(
+  '全部为 exact 路由且前缀正确',
+  routes.every((route) => route.kind === 'exact' && route.path.startsWith('/dsh-starlight/')),
+  routes.map((route) => route.path).join(','),
+)
+
+/* ------------------------------------------------------------------ */
+/* 2. 信任栅栏                                                         */
+/* ------------------------------------------------------------------ */
+
+console.log('\n[2] 信任栅栏')
+const crossSite = await call({ path: '/dsh-starlight/manifest', headers: { 'sec-fetch-site': 'cross-site' } })
+check('cross-site 被拒 403', crossSite.status === 403, String(crossSite.status))
+
+const badOrigin = await call({ path: '/dsh-starlight/manifest', headers: { origin: 'http://evil.example' } })
+check('异源 Origin 被拒 403', badOrigin.status === 403, String(badOrigin.status))
+
+const sameOrigin = await call({ path: '/dsh-starlight/manifest', headers: { origin: 'http://127.0.0.1:19387' } })
+check('同源 Origin 放行 200', sameOrigin.status === 200, String(sameOrigin.status))
+
+const remoteHost = await call({ path: '/dsh-starlight/manifest', headers: { host: '192.168.1.9:19387' } })
+check('非回环 Host 被拒 403', remoteHost.status === 403, String(remoteHost.status))
+
+const writeFromRemote = await call({
+  path: '/dsh-starlight/config',
+  method: 'POST',
+  headers: { host: '192.168.1.9:19387', 'sec-fetch-site': 'same-origin' },
+  body: { style: 'concise' },
+})
+check('非本机写请求被拒 403', writeFromRemote.status === 403, String(writeFromRemote.status))
+
+/* ------------------------------------------------------------------ */
+/* 3. manifest / health                                                */
+/* ------------------------------------------------------------------ */
+
+console.log('\n[3] 目录与探活')
+const manifest = await call({ path: '/dsh-starlight/manifest' })
+check('manifest 200', manifest.status === 200, String(manifest.status))
+check('规则数为 11', manifest.json.rules.length === 11, String(manifest.json.rules.length))
+check('风格数为 7', manifest.json.styles.length === 7, String(manifest.json.styles.length))
+check('llmAvailable 为 true', manifest.json.llmAvailable === true)
+check('默认 style=auto', manifest.json.config.style === 'auto', manifest.json.config.style)
+check('规则条目带双语标题', manifest.json.rules[0].title.zh !== undefined && manifest.json.rules[0].title.en !== undefined)
+
+const health = await call({ path: '/dsh-starlight/health' })
+check('health 200 且报出 provider', health.status === 200 && health.json.providers[0] === 'deepseek-account')
+
+/* ------------------------------------------------------------------ */
+/* 4. config / reset                                                   */
+/* ------------------------------------------------------------------ */
+
+console.log('\n[4] 规则持久化')
+const saved = await call({
+  path: '/dsh-starlight/config',
+  method: 'POST',
+  body: { style: 'engineering', depth: 'strong', locale: 'zh', disabledRules: ['structure', 'bogus-id'], customRules: ['必须包含验收小节', '  ', '不要用"请确保"'] },
+})
+check('保存 200', saved.status === 200, String(saved.status))
+check('style 已保存', saved.json.config.style === 'engineering', saved.json.config.style)
+check('未知规则 id 被丢弃', saved.json.config.disabledRules.length === 1, JSON.stringify(saved.json.config.disabledRules))
+check('空白自定义规则被剔除', saved.json.config.customRules.length === 2, JSON.stringify(saved.json.config.customRules))
+
+const onDisk = JSON.parse(fs.readFileSync(process.env.STARLIGHT_CONFIG_FILE, 'utf8'))
+check('落盘文件含 updatedAt', typeof onDisk.updatedAt === 'string')
+check('落盘文件 style 正确', onDisk.style === 'engineering', onDisk.style)
+check('落盘文件为合法 JSON 且换行结尾', fs.readFileSync(process.env.STARLIGHT_CONFIG_FILE, 'utf8').endsWith('\n'))
+
+const reread = await call({ path: '/dsh-starlight/manifest' })
+check('重新读取生效', reread.json.config.style === 'engineering')
+
+const reset = await call({ path: '/dsh-starlight/reset', method: 'POST', body: {} })
+check('重置回默认', reset.json.config.style === 'auto' && reset.json.config.customRules.length === 0)
+
+// 损坏文件不应炸掉
+fs.writeFileSync(process.env.STARLIGHT_CONFIG_FILE, '{ this is not json')
+const broken = await call({ path: '/dsh-starlight/manifest' })
+check('损坏配置回落默认值', broken.status === 200 && broken.json.config.style === 'auto', String(broken.status))
+
+/* ------------------------------------------------------------------ */
+/* 5. optimize                                                         */
+/* ------------------------------------------------------------------ */
+
+console.log('\n[5] 一键优化')
+fs.rmSync(process.env.STARLIGHT_CONFIG_FILE, { force: true })
+
+const empty = await call({ path: '/dsh-starlight/optimize', method: 'POST', body: { text: '   ' } })
+check('空草稿 400', empty.status === 400, String(empty.status))
+check('空草稿错误码', empty.json.error.code === 'empty-draft', empty.json.error.code)
+
+const tooBig = await call({ path: '/dsh-starlight/optimize', method: 'POST', body: { text: 'x'.repeat(24001) } })
+check('超长草稿 400', tooBig.status === 400 && tooBig.json.error.code === 'input-too-large')
+
+harness.llmReply = '```text\n# 目标\n让模型输出一个二分查找实现。\n\n# 要求\n- 只改必要部分\n```'
+const optimized = await call({
+  path: '/dsh-starlight/optimize',
+  method: 'POST',
+  body: { text: '帮我写个二分查找', route: { provider: 'deepseek-account', model: 'deepseek-flash' } },
+})
+check('优化 200', optimized.status === 200, String(optimized.status))
+check('mode=model', optimized.json.mode === 'model', optimized.json.mode)
+check('代码围栏被剥掉', !optimized.json.text.startsWith('```'), optimized.json.text.slice(0, 20))
+check('正文保留', optimized.json.text.includes('# 目标'), optimized.json.text.slice(0, 60))
+check('回传模型名', optimized.json.model === 'deepseek-flash', optimized.json.model)
+check('回传耗时', typeof optimized.json.elapsedMs === 'number')
+
+harness.llmReply = ''
+harness.llmFail = 'network down'
+const degraded = await call({ path: '/dsh-starlight/optimize', method: 'POST', body: { text: '你好  \n\n\n\n世界  ' } })
+check('模型失败时降级 200', degraded.status === 200, String(degraded.status))
+check('降级标记', degraded.json.mode === 'local' && degraded.json.degraded === true, JSON.stringify(degraded.json).slice(0, 120))
+check('降级做了本地整理', degraded.json.text === '你好\n\n世界', JSON.stringify(degraded.json.text))
+check('降级带说明', String(degraded.json.note).includes('network down'), String(degraded.json.note))
+harness.llmFail = ''
+
+/* ------------------------------------------------------------------ */
+/* 6. 提示词构造                                                       */
+/* ------------------------------------------------------------------ */
+
+console.log('\n[6] 系统提示构造')
+const cfg = rules.normalizeConfig(rules.DEFAULTS)
+const system = rules.buildSystemPrompt(cfg)
+check('含输出契约', system.includes('Output contract'))
+check('含全部 11 条规则正文', rules.RULE_CATALOG.every((rule) => system.includes(rule.body.en)))
+check('含不可协商护栏', system.includes('Never add, drop or replace a requirement'))
+check('默认风格=自动', system.includes('Decide the best prompt shape'))
+
+const withCustom = rules.buildSystemPrompt(cfg, { customRules: ['必须引用行号'] })
+check('自定义规则进提示', withCustom.includes('必须引用行号'))
+check('自定义规则段优先级说明', withCustom.includes('Additional user rules'))
+
+const offCfg = rules.normalizeConfig({ ...rules.DEFAULTS, disabledRules: ['structure', 'acceptance'] })
+const systemOff = rules.buildSystemPrompt(offCfg)
+check('停用规则后正文消失', !systemOff.includes(rules.RULE_CATALOG.find((r) => r.id === 'structure').body.en))
+check('未停用规则仍在', systemOff.includes(rules.RULE_CATALOG.find((r) => r.id === 'goal').body.en))
+
+const userContent = rules.buildUserContent('包含 "JSON" 和 ``` 围栏的草稿')
+check('用户消息用 JSON 框住草稿', userContent.includes('DRAFT_JSON:'))
+check('草稿被 JSON 转义', userContent.includes('\\"JSON\\"'), userContent.split('\n').pop())
+
+console.log('\n[7] 输出清洗')
+check('剥整体围栏', rules.sanitizeOutput('```md\nA\nB\n```') === 'A\nB', JSON.stringify(rules.sanitizeOutput('```md\nA\nB\n```')))
+check('剥中文前言', rules.sanitizeOutput('以下是优化后的提示词：\n\n正文') === '正文', JSON.stringify(rules.sanitizeOutput('以下是优化后的提示词：\n\n正文')))
+check('剥「优化后的提示词：」', rules.sanitizeOutput('优化后的提示词：\n\n正文') === '正文', JSON.stringify(rules.sanitizeOutput('优化后的提示词：\n\n正文')))
+check('剥英文前言', rules.sanitizeOutput("Here's the improved prompt:\n\nBody") === 'Body', JSON.stringify(rules.sanitizeOutput("Here's the improved prompt:\n\nBody")))
+check('剥 "Sure" 开头前言', rules.sanitizeOutput('Sure! Here is the optimized prompt:\n\nBody') === 'Body', JSON.stringify(rules.sanitizeOutput('Sure! Here is the optimized prompt:\n\nBody')))
+check('剥尾部寒暄', rules.sanitizeOutput('正文\n\n希望这有帮助！') === '正文', JSON.stringify(rules.sanitizeOutput('正文\n\n希望这有帮助！')))
+check(
+  '不误删用户自己的「这是要求：」标题',
+  rules.sanitizeOutput('这是要求：\n\n- 输出 JSON') === '这是要求：\n\n- 输出 JSON',
+  JSON.stringify(rules.sanitizeOutput('这是要求：\n\n- 输出 JSON')),
+)
+check(
+  '不误删不带感叹号的尾句',
+  rules.sanitizeOutput('正文\n\n如需更多示例请在草稿里说明。') === '正文\n\n如需更多示例请在草稿里说明。',
+)
+check('保留内部代码块', rules.sanitizeOutput('写一个函数：\n\n```js\nconst a = 1\n```') === '写一个函数：\n\n```js\nconst a = 1\n```')
+check('空输入返回空', rules.sanitizeOutput('   ') === '')
+
+console.log('\n[8] 本地兜底整理')
+check('去行尾空白', rules.tidyLocally('a  \nb\t') === 'a\nb', JSON.stringify(rules.tidyLocally('a  \nb\t')))
+check('压缩空行', rules.tidyLocally('a\n\n\n\nb') === 'a\n\nb')
+check('统一列表符号', rules.tidyLocally('• 一\n· 二') === '- 一\n- 二', JSON.stringify(rules.tidyLocally('• 一\n· 二')))
+check('补平奇数围栏', rules.tidyLocally('```js\nx').endsWith('```'))
+
+console.log('\n[9] maxTokens 缩放')
+check('短草稿有下限', rules.scaleMaxTokens('短', 1600) >= 512)
+check('不超过配置上限', rules.scaleMaxTokens('x'.repeat(20000), 2000) <= 2000)
+
+/* ------------------------------------------------------------------ */
+
+console.log(`\n结果：${passes} 通过 / ${failures} 失败`)
+fs.rmSync(tempDir, { recursive: true, force: true })
+process.exit(failures === 0 ? 0 : 1)

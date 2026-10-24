@@ -1,0 +1,23 @@
+# ============================================================================
+# dsh-prompt-starlight —— DSH bundle patch
+# ============================================================================
+# 插件的「挂载声明」。DSH 启动时按 bundle 层栈叠加各插件 patch，本文件把
+# 星芒提示词优化插件插入 profile 的配置树。
+#
+# 安装（推荐）：
+#   dsh plugin add link:<本目录绝对路径>          # 本地开发
+#   dsh plugin add dsh-prompt-starlight          # 发布到 npm 之后
+#
+# 手动安装（等价做法）：
+#   1) 在 profile 的 package.json 依赖里加 "dsh-prompt-starlight": "link:<本目录>"
+#   2) 把 "dsh-prompt-starlight" 加进 profile 的 dsh.profile.bundles
+#   3) pnpm install
+#
+# 本插件同时在宿主侧（HTTP 路由 + 模型调用）与浏览器侧（composer 圆形按钮）
+# 生效；浏览器半侧由 DSH 的 client-modules 自动按 /plugins 路由下发，
+# 因此无需任何手工 index.html 注入。
+# ============================================================================
+
+- insert:
+    - id: dsh-prompt-starlight
+      name: dsh-prompt-starlight

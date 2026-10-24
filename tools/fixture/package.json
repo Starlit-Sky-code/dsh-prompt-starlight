@@ -1,0 +1,11 @@
+{
+  "name": "dsh-prompt-starlight-test-fixture",
+  "private": true,
+  "version": "0.0.0",
+  "description": "Local-only React/jsdom fixture used by tools/test-client.mjs. Never shipped.",
+  "dependencies": {
+    "jsdom": "^25.0.1",
+    "react": "^18.3.1",
+    "react-dom": "^18.3.1"
+  }
+}

@@ -1,0 +1,51 @@
+{
+  "name": "dsh-prompt-starlight",
+  "version": "0.1.0",
+  "description": "星芒 · DSH 提示词一键优化插件：输入框右下角四角星按钮，一键把草稿改写成高质量提示词；优化规则、风格、语言全部可自定义（内置规则开关 + 自定义规则 + 本地兜底整理）",
+  "keywords": [
+    "dsh",
+    "dsh-plugin",
+    "deepseek-harness",
+    "prompt",
+    "prompt-engineering",
+    "composer"
+  ],
+  "type": "module",
+  "main": "lib/index.js",
+  "exports": {
+    ".": {
+      "default": "./lib/index.js"
+    },
+    "./client": {
+      "default": "./lib/client.js"
+    },
+    "./package.json": "./package.json"
+  },
+  "files": [
+    "lib",
+    "cordis.patch.yml",
+    "README.md",
+    "README.zh.md"
+  ],
+  "scripts": {
+    "test": "node tools/test-package.mjs && node tools/test-host.mjs && node tools/test-client.mjs",
+    "test:package": "node tools/test-package.mjs",
+    "test:host": "node tools/test-host.mjs",
+    "test:client": "node tools/test-client.mjs"
+  },
+  "dsh": {
+    "bundle": {
+      "patch": "./cordis.patch.yml"
+    },
+    "client": {
+      "platform": "web"
+    }
+  },
+  "peerDependencies": {
+    "@deepseek-ai/cordis": "~4.0.4"
+  },
+  "engines": {
+    "node": ">=20"
+  },
+  "license": "MIT"
+}
