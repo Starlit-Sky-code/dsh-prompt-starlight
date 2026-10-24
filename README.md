@@ -50,7 +50,7 @@ One npm package = one host half + one browser half.
 ### A. GUI (recommended)
 
 1. DSH → **Settings → Plugins**
-2. Install a local plugin, pointing at this directory (e.g. `D:\Program\TypeScript\dsh-prompt-starlight`)
+2. Install a local plugin, pointing at this directory (e.g. `D:\plugins\dsh-prompt-starlight`)
 3. Refresh the page
 
 ### B. Link it into the current profile
@@ -58,7 +58,7 @@ One npm package = one host half + one browser half.
 ```powershell
 $profile = "$env:DSH_HOME\profiles\desktop"
 $pkg = Get-Content "$profile\package.json" -Raw | ConvertFrom-Json
-$pkg.dependencies | Add-Member -NotePropertyName 'dsh-prompt-starlight' -NotePropertyValue 'link:D:\Program\TypeScript\dsh-prompt-starlight' -Force
+$pkg.dependencies | Add-Member -NotePropertyName 'dsh-prompt-starlight' -NotePropertyValue 'link:D:\plugins\dsh-prompt-starlight' -Force
 $pkg.dsh.profile.bundles += 'dsh-prompt-starlight'
 $pkg | ConvertTo-Json -Depth 20 | Set-Content "$profile\package.json" -Encoding utf8
 

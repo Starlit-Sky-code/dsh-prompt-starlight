@@ -51,7 +51,7 @@ DSH 输入框工具行**左侧**的**圆形四角星**按钮（自带一圈描�
 ### 方式 A：图形界面（推荐）
 
 1. 打开 DSH → **设置 → 插件**
-2. 选择安装本地插件，填入本目录的绝对路径（例如 `D:\Program\TypeScript\dsh-prompt-starlight`）
+2. 选择安装本地插件，填入本目录的绝对路径（例如 `D:\plugins\dsh-prompt-starlight`）
 3. 安装完成后刷新页面
 
 ### 方式 B：把本目录 link 进当前 profile
@@ -60,7 +60,7 @@ DSH 输入框工具行**左侧**的**圆形四角星**按钮（自带一圈描�
 # 1) 让 profile 依赖本目录
 $profile = "$env:DSH_HOME\profiles\desktop"
 $pkg = Get-Content "$profile\package.json" -Raw | ConvertFrom-Json
-$pkg.dependencies | Add-Member -NotePropertyName 'dsh-prompt-starlight' -NotePropertyValue 'link:D:\Program\TypeScript\dsh-prompt-starlight' -Force
+$pkg.dependencies | Add-Member -NotePropertyName 'dsh-prompt-starlight' -NotePropertyValue 'link:D:\plugins\dsh-prompt-starlight' -Force
 $pkg.dsh.profile.bundles += 'dsh-prompt-starlight'
 $pkg | ConvertTo-Json -Depth 20 | Set-Content "$profile\package.json" -Encoding utf8
 

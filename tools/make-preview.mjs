@@ -88,7 +88,7 @@ async function renderReal() {
   const manifest = {
     ok: true,
     version: '0.3.0',
-    configFile: 'D:\\DSH\\starlight-prompt.json',
+    configFile: 'C:\\Users\\you\\.dsh\\starlight-prompt.json',
     llmAvailable: true,
     rules: [
       { id: 'goal', group: 'base', title: { zh: '明确目标', en: 'State the goal' }, note: { zh: '开头一句话说清要达成什么结果', en: 'One line up front' } },
