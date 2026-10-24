@@ -241,4 +241,11 @@ Every possibly-absent service (`llm`, `agentDefaultModel`, `connection`, `sessio
 
 ## License
 
-MIT
+[GNU Affero General Public License v3.0](LICENSE) (AGPL-3.0).
+
+A strong copyleft licence with a network clause: if you run a modified version as
+a network service, you must offer users the corresponding source. Forks and
+redistributions stay under AGPL-3.0 and must keep this notice.
+
+Relicensing under a permissive licence is a decision for the copyright holder —
+open an issue if you need that, don't route around it.

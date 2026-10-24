@@ -299,4 +299,8 @@ node tools/asar-list.mjs "$env:DSH_HOME\resources\app.asar" list "dsh-client-ui-
 
 ## 许可
 
-MIT
+[GNU Affero 通用公共许可证 v3.0](LICENSE)（AGPL-3.0）。
+
+强 copyleft，且带「网络条款」：如果你把修改版作为网络服务提供给别人用，必须向他们提供对应源码。分发、二次开发都必须继续用 AGPL-3.0 并保留本声明。
+
+想以宽松许可（比如嵌进闭源产品）使用，请在仓库开 issue 谈——换许可证是版权人的决定，绕不过去。
