@@ -31,7 +31,9 @@
     "test": "node tools/test-package.mjs && node tools/test-host.mjs && node tools/test-client.mjs",
     "test:package": "node tools/test-package.mjs",
     "test:host": "node tools/test-host.mjs",
-    "test:client": "node tools/test-client.mjs"
+    "test:client": "node tools/test-client.mjs",
+    "preview": "node tools/make-preview.mjs",
+    "install:profile": "node tools/install-profile.mjs"
   },
   "dsh": {
     "bundle": {

@@ -212,6 +212,14 @@ cd tools\fixture
 npm install
 ```
 
+### 不重启也能看样式
+
+```powershell
+node tools/make-preview.mjs   # 生成 tools/preview.html，双击用浏览器打开
+```
+
+预览页的按钮 CSS 是脚本从 `lib/client.js` **原样抽取**的（不是手抄副本），展示工具行位置、idle/disabled/busy/error/done 五种状态、放大后的外圈，并支持亮/暗主题切换。改了按钮样式后重跑一次即可。
+
 `tools/asar-list.mjs` 是排查用的小工具，可以直接列 / 解包 DSH 的 `app.asar`：
 
 ```powershell

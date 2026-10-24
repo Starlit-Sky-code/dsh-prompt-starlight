@@ -187,6 +187,14 @@ cd tools\fixture
 npm install
 ```
 
+### See the styles without restarting
+
+```powershell
+node tools/make-preview.mjs   # writes tools/preview.html — just open it
+```
+
+The preview's button CSS is extracted verbatim from `lib/client.js` (not a hand-copied duplicate). It shows the toolbar position, idle / disabled / busy / error / done states, a 3× zoom of the ring, and light/dark themes. Re-run after touching the styles.
+
 `tools/asar-list.mjs` lists or unpacks DSH's `app.asar` for debugging.
 
 ---
