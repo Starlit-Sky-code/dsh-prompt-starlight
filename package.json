@@ -1,7 +1,7 @@
 {
   "name": "dsh-prompt-starlight",
-  "version": "0.2.0",
-  "description": "星芒 · DSH 提示词一键优化插件：输入框工具行左侧的四角星按钮（带外圈光环），一键把草稿改写成高质量提示词；规则、风格、语言、模型全部可自定义，并带独立设置页（设置 → 星芒提示词）",
+  "version": "0.3.0",
+  "description": "星芒 · DSH 提示词一键优化插件：输入框工具行左侧的四角星按钮（带外圈光环），一键把草稿改写成高质量提示词；规则、风格、语言、优化模型全部可自定义，并带独立设置页（设置 → 星芒提示词）",
   "keywords": [
     "dsh",
     "dsh-plugin",
@@ -32,7 +32,7 @@
     "test:package": "node tools/test-package.mjs",
     "test:host": "node tools/test-host.mjs",
     "test:client": "node tools/test-client.mjs",
-    "preview": "node tools/make-preview.mjs",
+    "preview": "node tools/make-preview.mjs && node tools/check-preview.mjs",
     "install:profile": "node tools/install-profile.mjs"
   },
   "dsh": {

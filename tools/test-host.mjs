@@ -61,25 +61,46 @@ function makeCtx(overrides = {}) {
 
 const harness = { llmReply: '', llmFail: '' }
 
-function loadPlugin(overrides) {
+/**
+ * 用给定服务起一份插件实例，路由表清空后重新收集。
+ * @param {object} [overrides] 覆盖 makeCtx 的默认服务
+ * @returns 插件上下文
+ */
+function boot(overrides) {
   routes.length = 0
   const ctx = makeCtx(overrides)
   plugin.apply({
     inject: (deps, callback) => {
       for (const dep of deps) {
-        if (ctx.get(dep) === undefined) throw new Error(`missing service ${dep}`)
+        if (dep !== 'webServer' && ctx.get(dep) === undefined) throw new Error(`missing service ${dep}`)
       }
-      callback(ctx)
+      callback({
+        get: (name) =>
+          name === 'webServer'
+            ? {
+                register(route) {
+                  routes.push(route)
+                  return () => {
+                    const index = routes.indexOf(route)
+                    if (index >= 0) routes.splice(index, 1)
+                  }
+                },
+              }
+            : ctx.get(name),
+        effect: () => () => {},
+      })
     },
   })
   return ctx
 }
 
-function fakeRequest({ method = 'GET', headers = {}, body } = {}) {
+function fakeRequest({ method = 'GET', headers = {}, body, query = '' } = {}) {
   const payload = body === undefined ? null : Buffer.from(JSON.stringify(body))
   return {
     method,
+    url: undefined,
     headers: { host: '127.0.0.1:19387', ...headers },
+    ...(query === '' ? {} : { url: query }),
     async *[Symbol.asyncIterator]() {
       if (payload !== null) yield payload
     },
@@ -118,31 +139,17 @@ async function call({ kind = 'exact', path: routePath, ...requestInit }) {
 /* ------------------------------------------------------------------ */
 
 console.log('\n[1] 插件形状')
-routes.length = 0
-const ctx = makeCtx()
-plugin.apply({
-  inject: (deps, cb) => {
-    const services = {
-      webServer: {
-        register(route) {
-          routes.push(route)
-          return () => {
-            const index = routes.indexOf(route)
-            if (index >= 0) routes.splice(index, 1)
-          }
-        },
-      },
-      llm: ctx.get('llm'),
-      agentDefaultModel: ctx.get('agentDefaultModel'),
-    }
-    cb({ get: (name) => services[name], effect: () => () => {} })
-  },
-})
+const ctx = boot()
 check('name 为 dsh-prompt-starlight', plugin.name === 'dsh-prompt-starlight', plugin.name)
-check('注册了 5 条路由', routes.length === 5, String(routes.length))
+check('注册了 6 条路由', routes.length === 6, String(routes.length))
 check(
   '全部为 exact 路由且前缀正确',
   routes.every((route) => route.kind === 'exact' && route.path.startsWith('/dsh-starlight/')),
+  routes.map((route) => route.path).join(','),
+)
+check(
+  '包含模型目录路由',
+  routes.some((route) => route.path === '/dsh-starlight/models'),
   routes.map((route) => route.path).join(','),
 )
 
@@ -186,6 +193,41 @@ check('规则条目带双语标题', manifest.json.rules[0].title.zh !== undefin
 
 const health = await call({ path: '/dsh-starlight/health' })
 check('health 200 且报出 provider', health.status === 200 && health.json.providers[0] === 'deepseek-account')
+check('health 报出规则分组可用', Array.isArray(manifest.json.ruleGroups) && manifest.json.ruleGroups.length === 3, String(manifest.json.ruleGroups?.length))
+check('health 未固定模型时 modelOverride 为 null', health.json.modelOverride === null, JSON.stringify(health.json.modelOverride))
+
+/* —— 模型目录 —— */
+const models = await call({ path: '/dsh-starlight/models' })
+check('模型目录 200', models.status === 200, String(models.status))
+check('目录含适配器公布的模型', models.json.models.length === 1, JSON.stringify(models.json.models))
+check('目录带友好名', models.json.models[0].name === 'Flash', models.json.models[0].name)
+check('目录带默认路由', models.json.default && models.json.default.provider === 'deepseek-account', JSON.stringify(models.json.default))
+check('目录无错误', Array.isArray(models.json.errors) && models.json.errors.length === 0, JSON.stringify(models.json.errors))
+check('首次查询未命中缓存', models.json.cached === false, String(models.json.cached))
+
+const modelsAgain = await call({ path: '/dsh-starlight/models' })
+check('二次查询命中缓存', modelsAgain.json.cached === true, String(modelsAgain.json.cached))
+const modelsRefresh = await call({ path: '/dsh-starlight/models', query: '/dsh-starlight/models?refresh=1' })
+check('?refresh=1 绕过缓存', modelsRefresh.json.cached === false, String(modelsRefresh.json.cached))
+
+// provider 抛错时不能整体失败，只记 errors
+boot({
+  llm: {
+    listProviders: () => ['deepseek-account', 'broken-provider'],
+    listModels: async (provider) => {
+      if (provider === 'broken-provider') throw new Error('provider 挂了')
+      return [{ provider, id: 'deepseek-flash', name: 'Flash' }]
+    },
+    stream: () => {
+      throw new Error('unused')
+    },
+  },
+})
+const partial = await call({ path: '/dsh-starlight/models', query: '/dsh-starlight/models?refresh=1' })
+check('单个 provider 失败不影响整体', partial.status === 200 && partial.json.models.length === 1, JSON.stringify(partial.json.models))
+check('失败 provider 记入 errors', partial.json.errors.length === 1 && partial.json.errors[0].provider === 'broken-provider', JSON.stringify(partial.json.errors))
+// 恢复标准服务组合
+boot()
 
 /* ------------------------------------------------------------------ */
 /* 4. config / reset                                                   */
@@ -243,7 +285,18 @@ check('mode=model', optimized.json.mode === 'model', optimized.json.mode)
 check('代码围栏被剥掉', !optimized.json.text.startsWith('```'), optimized.json.text.slice(0, 20))
 check('正文保留', optimized.json.text.includes('# 目标'), optimized.json.text.slice(0, 60))
 check('回传模型名', optimized.json.model === 'deepseek-flash', optimized.json.model)
+check('优化响应带模型友好名', optimized.json.modelName === 'Flash', String(optimized.json.modelName))
 check('回传耗时', typeof optimized.json.elapsedMs === 'number')
+
+// 固定模型后 health 要反映出来
+await call({ path: '/dsh-starlight/config', method: 'POST', body: { provider: 'openrouter', model: 'anthropic/claude' } })
+const healthFixed = await call({ path: '/dsh-starlight/health' })
+check(
+  'health 报出固定的模型覆盖',
+  healthFixed.json.modelOverride && healthFixed.json.modelOverride.provider === 'openrouter',
+  JSON.stringify(healthFixed.json.modelOverride),
+)
+await call({ path: '/dsh-starlight/reset', method: 'POST', body: {} })
 
 harness.llmReply = ''
 harness.llmFail = 'network down'

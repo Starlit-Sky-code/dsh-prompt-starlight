@@ -73,6 +73,8 @@ const host = read('lib/index.js')
 check('宿主入口导出默认对象', /export default \{/.test(host))
 check('宿主导出了 apply', /apply\(root\)/.test(host))
 check('宿主没有引入浏览器 API', !/\bdocument\.|\bwindow\./.test(host))
+check('宿主提供模型目录路由', host.includes('${ROUTE}/models'))
+check('模型目录有缓存与超时保护', host.includes('MODELS_CACHE_MS') && host.includes('MODELS_QUERY_TIMEOUT_MS'))
 
 console.log('\n[6] 浏览器半部')
 
@@ -90,6 +92,11 @@ check('注册进 settings.section 槽位（独立设置页）', client.includes(
 check('按钮带外圈描边/光晕（box-shadow 环）', /\.dshsl-btn\{[^}]*box-shadow:0 0 0 1px/.test(client))
 check('使用 useSyncExternalStore 订阅草稿', client.includes('useSyncExternalStore'))
 check('使用 createPortal 挂载浮层', client.includes('createPortal'))
+check('有模型切换组件（模型下拉）', client.includes('function ModelPicker') && client.includes("className: 'dshsl-select'"))
+check('拉取模型目录接口', client.includes("requestJson('/models'"))
+check('规则按分组渲染', client.includes('dshsl-rules-grid') && client.includes('ruleGroups'))
+check('尊重 prefers-reduced-motion', client.includes('prefers-reduced-motion: reduce'))
+check('骨架屏占位', client.includes('function Skeleton') && client.includes('dshsl-skel-bar'))
 
 console.log('\n[7] 文件清单')
 
