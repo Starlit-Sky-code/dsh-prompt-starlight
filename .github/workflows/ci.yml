@@ -15,15 +15,66 @@ on:
 permissions:
   contents: read
 
+# 同一分支连推多次时取消旧的那次；但 tag 上的运行永不取消（发版不能被打断）。
+concurrency:
+  group: ci-${{ github.workflow }}-${{ github.event.pull_request.number || github.ref }}
+  cancel-in-progress: ${{ !startsWith(github.ref, 'refs/tags/') }}
+
 jobs:
-  test:
+  # 只改了说明或截图时，没必要烧一轮完整测试。
+  changes:
+    name: 变更范围
     runs-on: ubuntu-latest
+    timeout-minutes: 5
+    outputs:
+      code: ${{ steps.scope.outputs.code }}
+    steps:
+      - uses: actions/checkout@v4
+        with:
+          fetch-depth: 0
+          persist-credentials: false
+
+      - id: scope
+        name: 判断是否只有文档变更
+        run: |
+          set -euo pipefail
+          if [ "${{ github.event_name }}" != "push" ] && [ "${{ github.event_name }}" != "pull_request" ]; then
+            echo "code=true" >> "$GITHUB_OUTPUT"
+            exit 0
+          fi
+          BASE="${{ github.event.pull_request.base.sha || github.event.before }}"
+          if [ -z "$BASE" ] || [[ "$BASE" =~ ^0+$ ]]; then
+            echo "code=true" >> "$GITHUB_OUTPUT"
+            exit 0
+          fi
+          CHANGED=$(git diff --name-only --no-renames "$BASE" HEAD)
+          echo "变更文件："
+          echo "$CHANGED"
+          # 只有说明、变更记录、docs、截图算「纯展示变更」
+          if echo "$CHANGED" | grep -qvE '^(README[^/]*\.md|CHANGELOG[^/]*\.md|docs/.*|assets/screenshots/.*)$'; then
+            echo "code=true" >> "$GITHUB_OUTPUT"
+          else
+            echo "code=false" >> "$GITHUB_OUTPUT"
+          fi
+
+  test:
+    name: 验证（Node.js ${{ matrix.node }}）
+    needs: changes
+    if: needs.changes.outputs.code == 'true'
+    runs-on: ubuntu-latest
+    timeout-minutes: 20
+    strategy:
+      fail-fast: false
+      # 与 package.json 的 engines.node（>=20）对齐：
+      # 声明了就得真的在最低版本上跑过。
+      matrix:
+        node: ['20', '22', '24']
     steps:
       - uses: actions/checkout@v4
 
       - uses: actions/setup-node@v4
         with:
-          node-version: '24'
+          node-version: ${{ matrix.node }}
 
       # tools/fixture 是测试用的 React/jsdom 沙箱，不随包发布
       - name: 安装测试夹具
@@ -33,16 +84,16 @@ jobs:
       - name: 安装根依赖
         run: npm install --no-audit --no-fund
 
-      - name: 署名头检查（20 个源文件）
+      - name: 署名头检查
         run: node tools/stamp-signature.mjs --check
 
-      - name: 包形状与署名（130 项断言）
+      - name: 包形状与署名
         run: node tools/test-package.mjs
 
-      - name: 宿主半部（86 项断言）
+      - name: 宿主半部
         run: node tools/test-host.mjs
 
-      - name: 浏览器半部（96 项断言）
+      - name: 浏览器半部
         run: node tools/test-client.mjs
 
       # 复刻宿主的 readPluginMeta 规则：图标相对路径、≤256 KiB、locale/exports
@@ -51,6 +102,10 @@ jobs:
 
       - name: 市场索引格式 1 校验
         run: node tools/validate-market.mjs
+
+      # 版本说明必须存在，否则发版会产出空 Release
+      - name: 版本说明可生成
+        run: node tools/extract-release-notes.mjs "v$(node -p "require('./package.json').version")" /tmp/notes.md
 
       # 防止 files[] 把不该发的图带进包（历史上就吃过大图亏）
       - name: 打包体积不超过 2 MB

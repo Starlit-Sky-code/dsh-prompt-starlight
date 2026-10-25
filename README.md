@@ -4,7 +4,7 @@
 
 <h1 align="center">Starlight · one-click prompt optimizer</h1>
 
-<p align="center"><sub>DSH plugin · <strong>by Starlit Sky</strong></sub></p>
+<p align="center"><sub>DSH plugin · <strong>by Starlit Sky</strong></sub> · <a href="CHANGELOG.md">Changelog</a></p>
 
 <p align="center">
   <img alt="license AGPL-3.0" src="https://img.shields.io/badge/license-AGPL--3.0-ff9d32" />
@@ -356,9 +356,15 @@ STARLIGHT_TRUSTED_HOSTS=192.168.1.9:19387,my-box.local
 ## Development
 
 ```powershell
-node tools/test-package.mjs   # package shape & signatures: 67 checks
-node tools/test-host.mjs      # host: 86 checks
-node tools/test-client.mjs    # browser: 96 checks
+node tools/test-package.mjs   # package shape, card metadata, changelog
+node tools/test-host.mjs      # host (routes, fence, persistence, catalog, icon, fallback, prompt, sanitize)
+node tools/test-client.mjs    # browser (both slots, sliders, folding, model switch, click, undo)
+```
+
+One command runs every check — CI runs exactly this:
+
+```powershell
+npm run verify
 ```
 
 `test-client.mjs` needs real React and jsdom, installed only under `tools/fixture`:

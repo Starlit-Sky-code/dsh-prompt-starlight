@@ -96,23 +96,22 @@ jobs:
           echo "tgz=$TGZ" >> "$GITHUB_OUTPUT"
           ls -l "$TGZ"
 
+      # 版本说明从 CHANGELOG 里抽，而不是用 --generate-notes 把提交标题堆成列表：
+      # 说明随代码一起评审（写在 CHANGELOG 的 diff 里），且缺该版本小节时本步直接失败，
+      # 发版不会产出空说明。
+      - name: 生成版本说明
+        run: node tools/extract-release-notes.mjs "${{ steps.version.outputs.tag }}" /tmp/notes.md
+
       - name: 建或更新 Release 并上传资产
         env:
           GH_TOKEN: ${{ secrets.GITHUB_TOKEN }}
         run: |
           TAG="${{ steps.version.outputs.tag }}"
           TGZ="${{ steps.pack.outputs.tgz }}"
-          # 说明文字写进文件再传给 gh，避免多行引号在 shell 里出事
-          {
-            printf '%s\n\n' "全部检查通过后自动打出的 tarball。"
-            printf '```\n'
-            printf 'dsh plugin add https://github.com/Starlit-Sky-code/dsh-prompt-starlight/releases/download/%s/%s\n' "$TAG" "$TGZ"
-            printf '```\n\n'
-            printf '%s\n' "by Starlit Sky · AGPL-3.0"
-          } > /tmp/notes.md
           if gh release view "$TAG" >/dev/null 2>&1; then
-            echo "Release $TAG 已存在，覆盖资产"
+            echo "Release $TAG 已存在，覆盖资产与说明"
             gh release upload "$TAG" "$TGZ" --clobber
+            gh release edit "$TAG" --notes-file /tmp/notes.md
           else
             gh release create "$TAG" "$TGZ" --title "$TAG" --notes-file /tmp/notes.md
           fi

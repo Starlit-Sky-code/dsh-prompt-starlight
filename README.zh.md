@@ -4,7 +4,7 @@
 
 <h1 align="center">星芒 · 提示词一键优化</h1>
 
-<p align="center"><sub>DSH 插件 · <strong>by Starlit Sky</strong></sub></p>
+<p align="center"><sub>DSH 插件 · <strong>by Starlit Sky</strong> · <a href="CHANGELOG.zh-CN.md">更新记录</a></sub></p>
 
 <p align="center">
   <img alt="license AGPL-3.0" src="https://img.shields.io/badge/license-AGPL--3.0-ff9d32" />
@@ -385,9 +385,15 @@ STARLIGHT_TRUSTED_HOSTS=192.168.1.9:19387,my-box.local
 ## 开发与测试
 
 ```powershell
-node tools/test-package.mjs   # 包形状与署名：67 项
-node tools/test-host.mjs      # 宿主：86 项（路由、栅栏、持久化、模型目录、图标、降级、提示词构造、清洗）
-node tools/test-client.mjs    # 浏览器：96 项（两个槽位、滑块、折叠、模型切换、点击、撤销）
+node tools/test-package.mjs   # 包形状、卡片元数据、变更记录
+node tools/test-host.mjs      # 宿主（路由、栅栏、持久化、模型目录、图标、降级、提示词构造、清洗）
+node tools/test-client.mjs    # 浏览器（两个槽位、滑块、折叠、模型切换、点击、撤销）
+```
+
+一条命令跑完全部检查——CI 跑的就是它：
+
+```powershell
+npm run verify
 ```
 
 `test-client.mjs` 需要真实 React 与 jsdom（只装在 `tools/fixture`，不进插件包）：

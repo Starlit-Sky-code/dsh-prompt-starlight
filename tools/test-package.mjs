@@ -60,6 +60,43 @@ check('exports["./client"] 是字符串路径', typeof clientPath === 'string', 
 check('客户端入口文件存在', typeof clientPath === 'string' && exists(clientPath), clientPath)
 check('exports 暴露 package.json', pkg.exports?.['./package.json'] !== undefined)
 
+console.log('\n[2c] 兼容范围与变更记录')
+
+// 声明了 engines.node 就必须真的在那个版本上跑过（CI 矩阵 20/22/24）。
+check('engines.node 已声明', typeof pkg.engines?.node === 'string', JSON.stringify(pkg.engines))
+check('engines.dsh 已声明', typeof pkg.engines?.dsh === 'string', JSON.stringify(pkg.engines))
+// 预发布版本必须靠带预发布比较符的范围才放行，否则 0.2.0-rc.x 会被静默排除
+check(
+  'engines.dsh 范围包含 DSH 的预发布版本',
+  /\d+\.\d+\.\d+-[0-9A-Za-z.-]+/.test(String(pkg.engines?.dsh)),
+  String(pkg.engines?.dsh),
+)
+
+check('存在 CHANGELOG.md', exists('CHANGELOG.md'))
+check('存在 CHANGELOG.zh-CN.md', exists('CHANGELOG.zh-CN.md'))
+for (const file of ['CHANGELOG.md', 'CHANGELOG.zh-CN.md']) {
+  if (!exists(file)) continue
+  const text = read(file)
+  check(`${file} 含当前版本 ${pkg.version} 的小节`, text.includes(`[${pkg.version}]`), pkg.version)
+  check(`${file} 有「未发布」小节`, /^## \[Unreleased\]|^## \[未发布\]/m.test(text))
+  check(`${file} 按 Keep a Changelog 分组`, /^### (Added|Changed|Fixed|Removed|新增|变更|修复|移除)/m.test(text))
+}
+check('files[] 包含 CHANGELOG', Array.isArray(pkg.files) && pkg.files.includes('CHANGELOG.md'))
+
+// 版本说明必须能从 CHANGELOG 里抽取出来，否则 Release 会是空的
+let notes = ''
+try {
+  notes = execFileSync(process.execPath, ['tools/extract-release-notes.mjs', `v${pkg.version}`], { cwd: root, encoding: 'utf8' })
+} catch (error) {
+  notes = ''
+}
+check('能生成当前版本的 Release 说明', notes.length > 80, `${notes.length} 字符`)
+check('Release 说明是中英双语', notes.includes('###') && notes.includes('<details>'), notes.slice(0, 40))
+
+check('package.json 有 verify 脚本', typeof pkg.scripts?.verify === 'string')
+check('package.json 有 prepublishOnly（没验过不发）', typeof pkg.scripts?.prepublishOnly === 'string', JSON.stringify(pkg.scripts?.prepublishOnly))
+check('keywords 含 cordis', Array.isArray(pkg.keywords) && pkg.keywords.includes('cordis'))
+
 console.log('\n[3] dsh 声明')
 
 check('dsh.client.platform 为字符串', typeof pkg.dsh?.client?.platform === 'string', JSON.stringify(pkg.dsh?.client))
