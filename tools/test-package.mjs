@@ -221,6 +221,12 @@ check('按钮带外圈描边/光晕（box-shadow 环）', /\.dshsl-btn\{[^}]*box
 check('使用 useSyncExternalStore 订阅草稿', client.includes('useSyncExternalStore'))
 check('使用 createPortal 挂载浮层', client.includes('createPortal'))
 check('有模型切换组件', client.includes('function ModelPicker'))
+check(
+  '复选框是自绘的（未选中态在深色主题里不会变成白块）',
+  client.includes('input[type=checkbox]{-webkit-appearance:none') && client.includes('input[type=checkbox]:checked::after'),
+)
+check('浮层与设置窗口都有内描边（深色下才分得清边界）', (client.match(/inset 0 0 0 \.5px var\(--dsw-alias-border-l3/g) || []).length >= 2)
+check('齿轮用 SVG 组件', client.includes('function GearIcon') && client.includes('e(GearIcon, { size: 15 })'))
 check('模型选择用原生形态的行 + 列表，不用 <select>', client.includes("className: 'dshsl-picker-row'") && client.includes("role: 'listbox'"))
 check('代码里不再有 select 元素', !client.includes("className: 'dshsl-select'") && !client.includes("'select',"))
 check('浮层有弹出 / 收回动画', client.includes('dshsl-pop-in') && client.includes('dshsl-pop-out'))

@@ -19,6 +19,9 @@ Chinese version: [CHANGELOG.zh-CN.md](CHANGELOG.zh-CN.md).
 ### Fixed
 
 - The model note was clipped by the picker's rounded container.
+- **The gear is an SVG icon now**: the ⚙ glyph renders as a small circle in many fonts and does not read as settings.
+- **The popover and the settings window carry an inset hairline**: on dark themes their fill is too close to the page fill for a shadow alone to separate them.
+- **Rule checkboxes are drawn by the plugin**: a native checkbox only honours accent-color, so its unchecked state was a glaring white square on dark themes; both themes now share the same blue check.
 - **The rules grid decided its columns from the viewport width** (`@media (min-width:560px)`), so the 360px-wide popover was squeezed into two columns on a large screen. It now follows the container: two compact columns in the popover, two columns with notes on the settings page.
 - The final shortcut hint in the expanded popover was cut in half by the panel edge; it has moved out (the settings page and README both mention it).
 

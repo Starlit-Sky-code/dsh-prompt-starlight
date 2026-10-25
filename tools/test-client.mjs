@@ -439,6 +439,8 @@ check('浮层头部带插件图标', panel.querySelector('.dshsl-head img.dshsl-
 // 齿轮：DSH 没有「打开设置页」的接口，所以插件自己弹一个独立设置窗口。
 check('头部有齿轮按钮', panel.querySelectorAll('.dshsl-head .dshsl-x').length === 2, String(panel.querySelectorAll('.dshsl-head .dshsl-x').length))
 check('齿轮声明打开对话框', panel.querySelector('.dshsl-head .dshsl-x').getAttribute('aria-haspopup') === 'dialog')
+check('齿轮是 SVG 图标而不是文字符号', panel.querySelector('.dshsl-head .dshsl-x svg.dshsl-gear') !== null)
+check('齿轮节点里没有 ⚙ 文字', panel.querySelector('.dshsl-head .dshsl-x').textContent.indexOf('⚙') === -1, JSON.stringify(panel.querySelector('.dshsl-head .dshsl-x').textContent))
 check('齿轮有说明文案', /设置窗口|settings window/.test(panel.querySelector('.dshsl-head .dshsl-x').getAttribute('title')))
 check('默认没有对话框', dom.window.document.querySelector('.dshsl-dialog') === null)
 
