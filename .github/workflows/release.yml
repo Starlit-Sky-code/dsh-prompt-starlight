@@ -34,6 +34,10 @@ jobs:
       - uses: actions/setup-node@v4
         with:
           node-version: '24'
+          # 关键：让 setup-node 往 .npmrc 写
+          #   //registry.npmjs.org/:_authToken=${NODE_AUTH_TOKEN}
+          # 只给步骤加 NODE_AUTH_TOKEN 环境变量是不生效的——npm 不会自己读它。
+          registry-url: 'https://registry.npmjs.org'
 
       # tag 必须是 vX.Y.Z，且与 package.json 的 version 完全一致。
       # 不一致就停下——否则会发出一个索引指向错误版本号的市场条目。
@@ -135,6 +139,10 @@ jobs:
           NODE_AUTH_TOKEN: ${{ secrets.NPM_TOKEN }}
         if: env.NODE_AUTH_TOKEN != ''
         run: |
+          # 兜底：即使 setup-node 没写，也确保 .npmrc 里有认证行
+          if ! grep -q '_authToken' ~/.npmrc 2>/dev/null; then
+            echo "//registry.npmjs.org/:_authToken=\${NODE_AUTH_TOKEN}" >> ~/.npmrc
+          fi
           if npm view "$(node -p "require('./package.json').name")@${{ steps.version.outputs.version }}" version >/dev/null 2>&1; then
             echo "该版本已在 registry 上，跳过"
             exit 0
