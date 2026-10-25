@@ -20,6 +20,7 @@
  */
 import fs from 'node:fs'
 import path from 'node:path'
+import { execFileSync } from 'node:child_process'
 import { fileURLToPath } from 'node:url'
 
 const root = path.resolve(path.dirname(fileURLToPath(import.meta.url)), '..')
@@ -186,7 +187,25 @@ for (const relative of [
 ]) {
   check(`存在 ${relative}`, exists(relative))
 }
-check('没有把 node_modules 打进包', !exists('node_modules'))
+/** git 跟踪的文件列表；不是 git 仓库（例如从 tarball 安装）时返回空串。 */
+function gitTracked(pattern) {
+  try {
+    return execFileSync('git', ['ls-files', pattern], { cwd: root, stdio: ['ignore', 'pipe', 'ignore'] })
+      .toString()
+      .trim()
+  } catch {
+    return ''
+  }
+}
+
+// 真正要防的是「把 node_modules 提交进仓库」和「把它发进包」，
+// 而不是「本机装过依赖」——CI 里 npm install 必然会创建这个目录。
+check('node_modules 没有被 git 跟踪', gitTracked('node_modules') === '', gitTracked('node_modules').split('\n').slice(0, 3).join(', '))
+check(
+  'files[] 不含 node_modules 与测试夹具',
+  Array.isArray(pkg.files) && !pkg.files.some((entry) => /node_modules|^tools/.test(entry)),
+  JSON.stringify(pkg.files),
+)
 
 console.log('\n[9] 插件市场索引')
 
