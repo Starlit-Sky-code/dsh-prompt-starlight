@@ -22,6 +22,12 @@ Chinese version: [CHANGELOG.zh-CN.md](CHANGELOG.zh-CN.md).
 - **The rules grid decided its columns from the viewport width** (`@media (min-width:560px)`), so the 360px-wide popover was squeezed into two columns on a large screen. It now follows the container: two compact columns in the popover, two columns with notes on the settings page.
 - The final shortcut hint in the expanded popover was cut in half by the panel edge; it has moved out (the settings page and README both mention it).
 
+### Added
+
+- **A "Skill market" tab on the settings page** (read-only catalog): searches the public ClawHub catalog and shows each skill's name, author, downloads, summary and the install reference the catalog itself provides, with one-click copy and a link to its page.
+  - Read-only: it installs nothing and writes no files; the footer just says the catalog is a read-only view, with no save button.
+  - Served through a host proxy, `GET /dsh-starlight/skills`: avoids browser CORS, and bounds upstream with a 10s timeout, no redirect following, a 1 MiB response cap and a field whitelist; identical queries are cached host-side for 60s.
+
 ## [0.4.1] - 2026-10-25
 
 ### Added

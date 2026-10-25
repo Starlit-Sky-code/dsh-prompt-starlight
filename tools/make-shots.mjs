@@ -148,14 +148,32 @@ async function renderReal(locale) {
   // 必须放在上面那轮 globals 赋值之后：那轮会把 navigator 换成 jsdom 的，
   // 而 detectLocale() 读的正是 navigator.language。
   Object.defineProperty(globalThis, 'navigator', {
-    value: { language: locale === 'zh' ? 'zh-CN' : 'en-US' },
+    value: { language: locale === 'zh' ? 'zh-CN' : 'en-US', userAgent: 'starlight-shots' },
     configurable: true,
     writable: true,
   })
 
+  // 技能目录的假数据：截图不能依赖外网
+  const SKILL_FIXTURE = {
+    ok: true,
+    source: 'clawhub',
+    sourceLabel: 'ClawHub',
+    site: 'https://clawhub.ai',
+    query: 'prompt',
+    items: [
+      { id: 'clawhub:1', reference: 'someone/prompt-harness', slug: 'prompt-harness', author: 'someone', name: 'prompt-harness', summary: '把草稿改写成可执行提示词，附带目标、约束与验收标准。', downloads: 4321, official: true, url: 'https://clawhub.ai/someone/skills/prompt-harness' },
+      { id: 'clawhub:2', reference: 'other/review-helper', slug: 'review-helper', author: 'other', name: 'review-helper', summary: '按清单逐项审阅改动，指出缺失的测试与边界。', downloads: 208, url: 'https://clawhub.ai/other/skills/review-helper' },
+      { id: 'clawhub:3', reference: 'team/doc-writer', slug: 'doc-writer', author: 'team', name: 'doc-writer', summary: '', url: 'https://clawhub.ai/team/skills/doc-writer' },
+    ],
+  }
+
   globalThis.fetch = async (url) => ({
     ok: true,
-    json: async () => (String(url).includes('/models') ? MODELS : MANIFEST),
+    json: async () => {
+      const target = String(url)
+      if (target.includes('/skills')) return SKILL_FIXTURE
+      return target.includes('/models') ? MODELS : MANIFEST
+    },
   })
 
   const loaded = []
@@ -272,6 +290,7 @@ async function renderReal(locale) {
     await new Promise((resolve) => setTimeout(resolve, 20))
   })
   const pageHtml = stage2.innerHTML
+
   await act(async () => {
     root2.unmount()
   })
@@ -375,6 +394,7 @@ for (const locale of ['zh', 'en']) {
   const pagePng = path.join(outDir, `settings${suffix}.png`)
   shot(browser, pagePage, pagePng, 700, 1240)
   written.push(pagePng)
+
 
   console.log(`  [${locale}] 浮层 ${rendered.popHtml.length} 字符 / 设置页 ${rendered.pageHtml.length} 字符`)
 }

@@ -150,7 +150,7 @@ async function call({ kind = 'exact', path: routePath, ...requestInit }) {
 console.log('\n[1] 插件形状')
 const ctx = boot()
 check('name 为 dsh-prompt-starlight', plugin.name === 'dsh-prompt-starlight', plugin.name)
-check('注册了 7 条路由', routes.length === 7, String(routes.length))
+check('注册了 8 条路由', routes.length === 8, String(routes.length))
 check(
   '全部为 exact 路由且前缀正确',
   routes.every((route) => route.kind === 'exact' && route.path.startsWith('/dsh-starlight/')),
@@ -164,6 +164,11 @@ check(
 check(
   '包含图标路由',
   routes.some((route) => route.path === '/dsh-starlight/icon.png'),
+  routes.map((route) => route.path).join(','),
+)
+check(
+  '包含技能目录路由',
+  routes.some((route) => route.path === '/dsh-starlight/skills'),
   routes.map((route) => route.path).join(','),
 )
 
@@ -383,6 +388,101 @@ check('不超过配置上限', rules.scaleMaxTokens('x'.repeat(20000), 2000) <= 
 
 /* ------------------------------------------------------------------ */
 
+console.log('\n[10] 只读技能目录（宿主代理）')
+
+// 上游用 stub 的 fetch 顶替：断言的是我们这个路由的行为，不是人家的服务
+const realFetch = globalThis.fetch
+const catalogCalls = []
+function stubCatalog(handler) {
+  globalThis.fetch = async (url) => {
+    catalogCalls.push(String(url))
+    return handler(String(url))
+  }
+}
+function jsonResponse(payload, status = 200) {
+  return {
+    ok: status >= 200 && status < 300,
+    status,
+    headers: { get: () => null },
+    text: async () => JSON.stringify(payload),
+    body: { cancel: async () => {} },
+  }
+}
+
+const CLAWHUB_BODY = {
+  results: [
+    {
+      id: 'clawhub:abc',
+      displayName: 'prompt-harness',
+      summary: '把草稿改写成可执行提示词',
+      downloads: 4321,
+      official: true,
+      canonicalUrl: '/someone/skills/prompt-harness',
+      install: { kind: 'clawhub', reference: 'someone/prompt-harness' },
+    },
+    // 引用非法 → 整条丢弃
+    { id: 'bad', displayName: 'bad', install: { reference: '../../etc/passwd' } },
+    // 没有 install.reference → 丢弃
+    { id: 'noinstall', displayName: 'x' },
+    // 与第一条同引用 → 去重
+    { id: 'dup', displayName: 'dup', install: { reference: 'someone/prompt-harness' } },
+  ],
+}
+
+stubCatalog(() => jsonResponse(CLAWHUB_BODY))
+const skillsOk = await call({ path: '/dsh-starlight/skills', query: '?q=prompt' })
+check('技能目录 200', skillsOk.status === 200, String(skillsOk.status))
+check('返回条目已归一化', skillsOk.json?.items?.length === 1, JSON.stringify(skillsOk.json?.items?.length))
+const firstItem = skillsOk.json?.items?.[0] ?? {}
+check('保留引用与作者', firstItem.reference === 'someone/prompt-harness' && firstItem.author === 'someone', JSON.stringify(firstItem.reference))
+check('保留下载数与官方标', firstItem.downloads === 4321 && firstItem.official === true)
+check('拼出可点链接', firstItem.url === 'https://clawhub.ai/someone/skills/prompt-harness', String(firstItem.url))
+check('丢弃非法/缺失/重复的引用', skillsOk.json?.items?.length === 1)
+check('查询词会被编码进上游 URL', catalogCalls[0]?.includes('q=prompt'), String(catalogCalls[0]))
+
+// 缓存：同一查询不再打上游
+const before = catalogCalls.length
+const skillsCached = await call({ path: '/dsh-starlight/skills', query: '?q=prompt' })
+check('第二次命中缓存', skillsCached.json?.cached === true, String(skillsCached.json?.cached))
+check('缓存命中时不请求上游', catalogCalls.length === before, String(catalogCalls.length - before))
+
+// 大小写不同视为同一查询
+await call({ path: '/dsh-starlight/skills', query: '?q=PROMPT' })
+check('查询词大小写归一后共用缓存', catalogCalls.length === before, String(catalogCalls.length - before))
+
+const noQuery = await call({ path: '/dsh-starlight/skills' })
+check('缺搜索词 400', noQuery.status === 400 && noQuery.json?.error?.code === 'catalog_query', String(noQuery.status))
+
+const longQuery = await call({ path: '/dsh-starlight/skills', query: `?q=${'x'.repeat(120)}` })
+check('搜索词超长 400', longQuery.status === 400 && longQuery.json?.error?.code === 'catalog_query', String(longQuery.status))
+
+const badSource = await call({ path: '/dsh-starlight/skills', query: '?q=prompt&source=evil' })
+check('未知目录源 400', badSource.status === 400 && badSource.json?.error?.code === 'catalog_source', String(badSource.status))
+
+stubCatalog(() => jsonResponse({ error: 'boom' }, 503))
+const upstreamDown = await call({ path: '/dsh-starlight/skills', query: '?q=fresh-1' })
+check('上游 5xx → 502', upstreamDown.status === 502 && upstreamDown.json?.error?.code === 'catalog_upstream', String(upstreamDown.status))
+
+stubCatalog(() => ({ ok: true, status: 200, headers: { get: () => null }, text: async () => 'not json', body: { cancel: async () => {} } }))
+const badJson = await call({ path: '/dsh-starlight/skills', query: '?q=fresh-2' })
+check('上游返回非 JSON → 502', badJson.status === 502 && badJson.json?.error?.code === 'catalog_response', String(badJson.status))
+
+stubCatalog(() => ({ ok: true, status: 200, headers: { get: () => '999999999' }, text: async () => '{}', body: { cancel: async () => {} } }))
+const tooLarge = await call({ path: '/dsh-starlight/skills', query: '?q=fresh-3' })
+check('声明体积过大 → 502', tooLarge.status === 502 && tooLarge.json?.error?.code === 'catalog_response', String(tooLarge.status))
+
+stubCatalog(() => {
+  const error = new Error('timed out')
+  error.name = 'TimeoutError'
+  throw error
+})
+const timedOut = await call({ path: '/dsh-starlight/skills', query: '?q=fresh-4' })
+check('上游超时 → 504', timedOut.status === 504 && timedOut.json?.error?.code === 'catalog_timeout', String(timedOut.status))
+
+globalThis.fetch = realFetch
+
 console.log(`\n结果：${passes} 通过 / ${failures} 失败`)
+fs.rmSync(tempDir, { recursive: true, force: true })
+process.exit(failures === 0 ? 0 : 1)
 fs.rmSync(tempDir, { recursive: true, force: true })
 process.exit(failures === 0 ? 0 : 1)

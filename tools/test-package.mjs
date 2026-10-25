@@ -384,6 +384,18 @@ check('署名含仓库地址', clientHead.includes('github.com/Starlit-Sky-code/
 check('客户端有运行时署名水印', client.includes('__starlightSigned'))
 check('宿主有启动署名日志', read('lib/index.js').includes('[dsh-prompt-starlight] 星芒 · Starlit Sky'))
 
+console.log('\n[10] 只读技能目录')
+
+check('目录走宿主代理（浏览器不直连目录站）', host.includes('ROUTE}/skills') && host.includes('clawhub.ai/api/v1/search'))
+check('目录请求禁止跟随重定向并设超时', host.includes("redirect: 'error'") && host.includes('SKILL_TIMEOUT_MS'))
+check('目录响应有体积上限并走截断读取', host.includes('SKILL_MAX_BYTES') && host.includes('readCappedText'))
+check('目录条目只保留校验过的引用', host.includes('SKILL_REFERENCE') && host.includes('normalizeSkillItems'))
+check('目录查询有缓存', host.includes('SKILL_CACHE_TTL_MS') && host.includes('rememberSkillResult'))
+check('目录只读：宿主侧没有写入技能文件的代码', !/skills?[^]*writeFileSync/.test(host.slice(host.indexOf('SKILL_SOURCES'))))
+check('客户端有技能市场视图', client.includes('function SkillsMarket') && client.includes("'dshsl-market'"))
+check('客户端展示目录给的引用而不是自造命令', client.includes('dshsl-skill-ref') && client.includes('复制引用'))
+check('设置页有标签页切换', client.includes('dshsl-tab') && client.includes("'market'"))
+
 check('工作流文件存在且带署名', workflowFiles.length >= 2 && workflowFiles.every((f) => read(f).includes(MARK)), workflowFiles.join(', '))
 check('CI 工作流在 main push 与 PR 上触发', read('.github/workflows/ci.yml').includes('branches: [main]') && read('.github/workflows/ci.yml').includes('pull_request'))
 check('Release 工作流由 v* tag 触发', read('.github/workflows/release.yml').includes("tags: ['v*']"))

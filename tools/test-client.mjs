@@ -629,11 +629,146 @@ check('宿主不可达时给出提示', /宿主无响应|宿主半部没有响�
 check('宿主不可达时提供重试按钮', Array.from(failContainer.querySelectorAll('button')).some((node) => /重试|Retry/.test(node.textContent)))
 
 
+/* ------------------------------------------------------------------ */
+/* 6. 设置页：技能市场（只读目录）                                    */
+/* ------------------------------------------------------------------ */
+
+console.log('\n[6] 技能市场：只读目录')
+
+const marketContainer = dom.window.document.createElement('div')
+dom.window.document.body.appendChild(marketContainer)
+const marketRoot = ReactDOMClient.createRoot(marketContainer)
+
+const CATALOG_ITEMS = [
+  {
+    id: 'clawhub:1',
+    reference: 'someone/prompt-harness',
+    slug: 'prompt-harness',
+    author: 'someone',
+    name: 'prompt-harness',
+    summary: '把草稿改写成可执行提示词',
+    downloads: 4321,
+    official: true,
+    url: 'https://clawhub.ai/someone/skills/prompt-harness',
+  },
+  {
+    id: 'clawhub:2',
+    reference: 'other/review-helper',
+    slug: 'review-helper',
+    author: 'other',
+    name: 'review-helper',
+    summary: '',
+    url: 'https://clawhub.ai/other/skills/review-helper',
+  },
+]
+
+let catalogRequest = null
+let catalogMode = 'ok'
+fetchImpl = (url) => {
+  if (url.includes('/skills')) {
+    catalogRequest = url
+    if (catalogMode === 'error') return { ok: false, error: { code: 'catalog_upstream', message: '目录服务暂时不可用' } }
+    return { ok: true, source: 'clawhub', sourceLabel: 'ClawHub', query: 'prompt', items: CATALOG_ITEMS }
+  }
+  return manifestPayload()
+}
+
+await act(async () => {
+  marketRoot.render(React.createElement(SettingsSection, {}))
+})
+await tick()
+
+check('设置页有两个标签页', marketContainer.querySelectorAll('.dshsl-tab').length === 2, String(marketContainer.querySelectorAll('.dshsl-tab').length))
+check('默认停在「配置」', marketContainer.querySelector('.dshsl-tab[data-on="1"]').textContent !== '' && /配置|Settings/.test(marketContainer.querySelector('.dshsl-tab[data-on="1"]').textContent), marketContainer.querySelector('.dshsl-tab[data-on="1"]').textContent)
+check('默认看不到技能目录', marketContainer.querySelector('.dshsl-market') === null)
+
+await act(async () => {
+  marketContainer.querySelectorAll('.dshsl-tab')[1].dispatchEvent(new dom.window.MouseEvent('click', { bubbles: true }))
+})
+check('切到技能市场', marketContainer.querySelector('.dshsl-market') !== null)
+check('有搜索框与按钮', marketContainer.querySelector('.dshsl-market-search input') !== null && marketContainer.querySelectorAll('.dshsl-market-search button').length === 1)
+check('未搜索时显示只读说明', /只做展示|read-only/.test(marketContainer.querySelector('.dshsl-market').textContent))
+check('切到市场后配置卡片消失', marketContainer.querySelector('.dshsl-card') === null)
+check(
+  '只读目录页不显示保存类操作',
+  marketContainer.querySelectorAll('.dshsl-page-foot .dshsl-btn2').length === 0 &&
+    /只读|read-only/.test(marketContainer.querySelector('.dshsl-page-foot').textContent),
+  marketContainer.querySelector('.dshsl-page-foot').textContent,
+)
+await act(async () => {
+  marketContainer.querySelectorAll('.dshsl-tab')[0].dispatchEvent(new dom.window.MouseEvent('click', { bubbles: true }))
+})
+check(
+  '切回配置页保存按钮回来',
+  marketContainer.querySelectorAll('.dshsl-page-foot .dshsl-btn2').length === 2,
+  String(marketContainer.querySelectorAll('.dshsl-page-foot .dshsl-btn2').length),
+)
+await act(async () => {
+  marketContainer.querySelectorAll('.dshsl-tab')[1].dispatchEvent(new dom.window.MouseEvent('click', { bubbles: true }))
+})
+
+// 搜索
+const searchInput = marketContainer.querySelector('.dshsl-market-search input')
+await act(async () => {
+  const setter = Object.getOwnPropertyDescriptor(dom.window.HTMLInputElement.prototype, 'value').set
+  setter.call(searchInput, 'prompt')
+  searchInput.dispatchEvent(new dom.window.Event('input', { bubbles: true }))
+})
+await act(async () => {
+  marketContainer.querySelector('.dshsl-market-search button').dispatchEvent(new dom.window.MouseEvent('click', { bubbles: true }))
+})
+await act(async () => {
+  await new Promise((resolve) => setTimeout(resolve, 30))
+})
+
+check('搜索请求打到 /skills 并带编码后的查询词', String(catalogRequest).includes('/skills?q=prompt'), String(catalogRequest))
+const skillCards = Array.from(marketContainer.querySelectorAll('.dshsl-skill'))
+check('渲染出目录条目', cards.length === 2, String(cards.length))
+check('显示名称与作者', skillCards[0].textContent.includes('prompt-harness') && skillCards[0].textContent.includes('someone'), skillCards[0].textContent.slice(0, 60))
+check('显示下载数与官方标', skillCards[0].textContent.includes('4321') && /官方|Official/.test(skillCards[0].textContent), skillCards[0].textContent.slice(0, 60))
+check('展示目录给的安装引用（不自行编造命令）', skillCards[0].querySelector('.dshsl-skill-ref').textContent === 'someone/prompt-harness', skillCards[0].querySelector('.dshsl-skill-ref').textContent)
+check('没有摘要的条目不留空行', skillCards[1].querySelector('.dshsl-skill-summary') === null)
+check('有打开目录页的链接', skillCards[0].querySelector('.dshsl-skill-link') !== null && skillCards[0].querySelector('.dshsl-skill-link').getAttribute('rel').includes('noreferrer'))
+check('结果显示条数与只读说明', /共 2 条|Found 2/.test(marketContainer.querySelector('.dshsl-market').textContent))
+
+// 复制引用
+let copiedText = null
+Object.defineProperty(dom.window.navigator, 'clipboard', {
+  value: { writeText: async (text) => { copiedText = text } },
+  configurable: true,
+})
+const copyButton = skillCards[0].querySelector('.dshsl-btn3')
+await act(async () => {
+  copyButton.dispatchEvent(new dom.window.MouseEvent('click', { bubbles: true }))
+})
+await act(async () => {
+  await new Promise((resolve) => setTimeout(resolve, 20))
+})
+check('复制的是目录引用', copiedText === 'someone/prompt-harness', String(copiedText))
+check('复制后按钮反馈「已复制」', /已复制|Copied/.test(skillCards[0].textContent), skillCards[0].textContent.slice(0, 40))
+
+// 上游故障
+catalogMode = 'error'
+await act(async () => {
+  const setter = Object.getOwnPropertyDescriptor(dom.window.HTMLInputElement.prototype, 'value').set
+  setter.call(marketContainer.querySelector('.dshsl-market-search input'), 'other')
+  marketContainer.querySelector('.dshsl-market-search input').dispatchEvent(new dom.window.Event('input', { bubbles: true }))
+})
+await act(async () => {
+  marketContainer.querySelectorAll('.dshsl-market-search button')[0].dispatchEvent(new dom.window.MouseEvent('click', { bubbles: true }))
+})
+await act(async () => {
+  await new Promise((resolve) => setTimeout(resolve, 30))
+})
+check('目录故障时给出原因与重试', /目录服务暂时不可用/.test(marketContainer.querySelector('.dshsl-market').textContent) && /重试|Retry/.test(marketContainer.querySelector('.dshsl-market').textContent), marketContainer.querySelector('.dshsl-market').textContent.slice(0, 80))
+check('故障时不再展示旧条目', marketContainer.querySelectorAll('.dshsl-skill').length === 0)
+
 console.log(`\n结果：${passes} 通过 / ${failures} 失败`)
 await act(async () => {
   root.unmount()
   pageRoot.unmount()
   failRoot.unmount()
+  marketRoot.unmount()
 })
 dom.window.close()
 process.exit(failures === 0 ? 0 : 1)
