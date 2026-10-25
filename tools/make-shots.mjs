@@ -261,7 +261,9 @@ async function renderReal(locale) {
       await act(async () => {
         await new Promise((resolve) => setTimeout(resolve, 220))
       })
-      popHtmlFull = panel.outerHTML
+      // 窗口是 portal 到 body 的，从 panel 里取不到
+      const dialogEl = dom.window.document.querySelector('.dshsl-dialog')
+      if (dialogEl !== null) popHtmlFull = dialogEl.outerHTML
     }
   }
   await act(async () => {
@@ -342,7 +344,7 @@ const mkPage = (body, width, css, lang) => `<!doctype html>
 <style>${TOKENS}</style>
 <style data-preview="real-css">${css}</style>
 <!-- 截图要拍「最终态」：静态页会重新播放入场动画，必须关掉 -->
-<style>.dshsl-panel,.dshsl-picker-list,.dshsl-toast,.dshsl-skel-bar,.dshsl-star{animation:none !important;opacity:1 !important;transform:none !important}</style>
+<style>.dshsl-panel,.dshsl-picker-list,.dshsl-toast,.dshsl-skel-bar,.dshsl-star,.dshsl-dialog-panel{animation:none !important;opacity:1 !important;transform:none !important}</style>
 </head><body><div class="shot" style="width:${width}px">${inlineIcon(body)}</div></body></html>`
 
 const written = []
@@ -378,10 +380,10 @@ for (const locale of ['zh', 'en']) {
   }
 
   if (rendered.popHtmlFull !== '') {
-    const fullPage = path.join(work, `popover-full${suffix}.html`)
+    const fullPage = path.join(work, `settings-dialog${suffix}.html`)
     fs.writeFileSync(fullPage, mkPage(rendered.popHtmlFull, 400, rendered.css, locale === 'zh' ? 'zh-CN' : 'en'), 'utf8')
-    const fullPng = path.join(outDir, `popover-full${suffix}.png`)
-    shot(browser, fullPage, fullPng, 440, 1200)
+    const fullPng = path.join(outDir, `settings-dialog${suffix}.png`)
+    shot(browser, fullPage, fullPng, 840, 900)
     written.push(fullPng)
   }
 

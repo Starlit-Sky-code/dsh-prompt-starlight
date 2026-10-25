@@ -63,6 +63,10 @@ Model list expanded (the same row + chevron as DSH's native picker, no OS dropdo
 
 <img src="docs/screenshots/popover-more.png" width="380" alt="More section" />
 
+The gear in the popover opens a **standalone settings window** — the same config as Settings → Starlight, 760px wide, rules in two columns:
+
+<img src="docs/screenshots/settings-dialog.png" width="620" alt="Settings window" />
+
 Settings page (Settings → Starlight) — model first, then the two sliders, the rest collapsed:
 
 <img src="docs/screenshots/settings.png" width="620" alt="Starlight settings page" />

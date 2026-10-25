@@ -436,86 +436,69 @@ check('选中后列表收起', panel.querySelector('.dshsl-picker-list') === nul
 check('选中后选择行显示新值', /DeepSeek/.test(panel.querySelector('.dshsl-picker-row').textContent), panel.querySelector('.dshsl-picker-row').textContent)
 check('浮层头部带插件图标', panel.querySelector('.dshsl-head img.dshsl-icon') !== null)
 
-// 齿轮：DSH 没有「打开设置页」的接口，所以这里就地展开设置页的内容。
+// 齿轮：DSH 没有「打开设置页」的接口，所以插件自己弹一个独立设置窗口。
 check('头部有齿轮按钮', panel.querySelectorAll('.dshsl-head .dshsl-x').length === 2, String(panel.querySelectorAll('.dshsl-head .dshsl-x').length))
-check('齿轮有说明与按下态语义', panel.querySelector('.dshsl-head .dshsl-x').getAttribute('aria-pressed') === 'false')
-check('默认是常用视图（标题不含「全部设置」）', !/全部设置|all settings/.test(panel.querySelector('.dshsl-title').textContent))
-
-const gear = panel.querySelector('.dshsl-head .dshsl-x')
-await act(async () => {
-  gear.dispatchEvent(new dom.window.MouseEvent('click', { bubbles: true }))
-})
-check('齿轮切换后标题变为「全部设置」', /全部设置|all settings/.test(panel.querySelector('.dshsl-title').textContent), panel.querySelector('.dshsl-title').textContent)
-check('齿轮进入按下态', panel.querySelector('.dshsl-head .dshsl-x').getAttribute('aria-pressed') === 'true')
-const fullRanges = Array.from(panel.querySelectorAll('.dshsl-body .dshsl-range'))
-check('全部设置是常用视图的超集（5 根滑块）', fullRanges.length === 5, String(fullRanges.length))
-check('全部设置里有模型选择行', panel.querySelector('.dshsl-body .dshsl-picker-row') !== null)
-check('全部设置里有规则勾选', panel.querySelectorAll('.dshsl-rule input[type=checkbox]').length >= 4, String(panel.querySelectorAll('.dshsl-rule input[type=checkbox]').length))
-check('全部设置里说明了为什么不是跳转', /同一份配置|share one config/.test(panel.querySelector('.dshsl-body').textContent), panel.querySelector('.dshsl-body').textContent.slice(-80))
+check('齿轮声明打开对话框', panel.querySelector('.dshsl-head .dshsl-x').getAttribute('aria-haspopup') === 'dialog')
+check('齿轮有说明文案', /设置窗口|settings window/.test(panel.querySelector('.dshsl-head .dshsl-x').getAttribute('title')))
+check('默认没有对话框', dom.window.document.querySelector('.dshsl-dialog') === null)
 
 await act(async () => {
   panel.querySelector('.dshsl-head .dshsl-x').dispatchEvent(new dom.window.MouseEvent('click', { bubbles: true }))
 })
-check('再点一次回到常用视图', !/全部设置|all settings/.test(panel.querySelector('.dshsl-title').textContent))
-check('常用视图仍是 2 根滑块', panel.querySelectorAll('.dshsl-body .dshsl-range').length === 2, String(panel.querySelectorAll('.dshsl-body .dshsl-range').length))
+await tick()
 
-// 两根滑块
-const ranges = Array.from(panel.querySelectorAll('.dshsl-body .dshsl-range'))
-check('浮层有两根滑块', ranges.length === 2, String(ranges.length))
-check('强度滑块是 5 档', ranges[0] && ranges[0].getAttribute('max') === '4', ranges[0] && ranges[0].getAttribute('max'))
-check('详细度滑块是 3 档', ranges[1] && ranges[1].getAttribute('max') === '2', ranges[1] && ranges[1].getAttribute('max'))
-check('强度滑块当前在均衡（索引 2）', ranges[0] && ranges[0].value === '2', ranges[0] && ranges[0].value)
-check('刻度文字齐全', panel.querySelectorAll('.dshsl-tick').length === 8, String(panel.querySelectorAll('.dshsl-tick').length))
+const dialog = dom.window.document.querySelector('.dshsl-dialog')
+check('点击齿轮弹出独立窗口', dialog !== null)
+check('窗口挂在 body 上（独立模态层）', dialog !== null && dialog.parentElement === dom.window.document.body)
+check('窗口有 dialog 语义', dialog !== null && dialog.querySelector('[role=dialog]') !== null && dialog.querySelector('[role=dialog]').getAttribute('aria-modal') === 'true')
+check('窗口标题是「全部设置」', dialog !== null && /全部设置|all settings/.test(dialog.querySelector('.dshsl-title').textContent), dialog && dialog.querySelector('.dshsl-title').textContent)
+check('窗口带遮罩', dialog !== null && dialog.querySelector('.dshsl-dialog-backdrop') !== null)
 
-// 语言分段 3 个
-const langGroup = Array.from(panel.querySelectorAll('.dshsl-seg')).pop()
-check('语言有 3 个选项', langGroup !== undefined && langGroup.querySelectorAll('button').length === 3, langGroup && String(langGroup.querySelectorAll('button').length))
+const dialogRanges = Array.from(dialog.querySelectorAll('.dshsl-dialog-body .dshsl-range'))
+check('窗口是常用视图的超集（5 根滑块）', dialogRanges.length === 5, String(dialogRanges.length))
+check('窗口里有模型选择行', dialog.querySelector('.dshsl-dialog-body .dshsl-picker-row') !== null)
+check('窗口里有规则勾选', dialog.querySelectorAll('.dshsl-rule input[type=checkbox]').length >= 4, String(dialog.querySelectorAll('.dshsl-rule input[type=checkbox]').length))
+check('窗口里有保存与恢复默认', dialog.querySelectorAll('.dshsl-page-foot .dshsl-btn2').length === 2, String(dialog.querySelectorAll('.dshsl-page-foot .dshsl-btn2').length))
+check('未改动时保存禁用', dialog.querySelector('.dshsl-page-foot .dshsl-btn2[data-primary="1"]').disabled === true)
+check('窗口注明与设置页同一份配置', /同一份配置|share one config/.test(dialog.textContent))
 
-// 规则默认折叠
-const more = panel.querySelector('.dshsl-more')
-check('有折叠区', more !== null)
-check('折叠区默认收起', more.getAttribute('data-open') === '0')
-check('收起时看不到规则勾选框', panel.querySelectorAll('.dshsl-rule input[type=checkbox]').length === 0)
+// 浮层还在（窗口是叠在它上面的独立层）
+check('窗口打开时浮层仍在', dom.window.document.querySelector('.dshsl-panel') !== null)
 
+// 在窗口里改一条规则，保存按钮应可用
 await act(async () => {
-  more.querySelector('.dshsl-more-head').dispatchEvent(new dom.window.MouseEvent('click', { bubbles: true }))
+  dialog.querySelector('.dshsl-rule input[type=checkbox]').click()
 })
-check('点击后展开', panel.querySelector('.dshsl-more').getAttribute('data-open') === '1')
-check('展开后能看到规则', panel.querySelectorAll('.dshsl-rule input[type=checkbox]').length === 4, String(panel.querySelectorAll('.dshsl-rule input[type=checkbox]').length))
-check('展开后能看到场景', /场景|Scenario/.test(panel.textContent))
+check('窗口里改动后保存可用', dom.window.document.querySelector('.dshsl-dialog .dshsl-page-foot .dshsl-btn2[data-primary="1"]').disabled === false)
 
-// 拖到最小强度 + 取消勾选一条规则，然后保存
+// 遮罩点击关闭
+const manifestsBefore = fetchLog.filter((entry) => entry.url.includes('/manifest')).length
 await act(async () => {
-  const setter = Object.getOwnPropertyDescriptor(dom.window.HTMLInputElement.prototype, 'value').set
-  setter.call(ranges[0], '0')
-  ranges[0].dispatchEvent(new dom.window.Event('input', { bubbles: true }))
+  dom.window.document.querySelector('.dshsl-dialog-backdrop').dispatchEvent(new dom.window.MouseEvent('click', { bubbles: true }))
 })
 await act(async () => {
-  panel.querySelector('.dshsl-rule input[type=checkbox]').click()
+  await new Promise((resolve) => setTimeout(resolve, 40))
 })
-check('滑块与勾选都让状态变脏', /未保存|Unsaved/.test(panel.querySelector('.dshsl-hint').textContent), panel.querySelector('.dshsl-hint').textContent)
+check('点遮罩关闭窗口', dom.window.document.querySelector('.dshsl-dialog') === null)
+check('关闭后浮层还在', dom.window.document.querySelector('.dshsl-panel') !== null)
+const manifestsAfter = fetchLog.filter((entry) => entry.url.includes('/manifest')).length
+check('关闭后刷新浮层（重新拉 manifest）', manifestsAfter > manifestsBefore, `${manifestsBefore} → ${manifestsAfter}`)
+check('关闭后浮层标题仍是常用视图', /提示词优化|prompt optimizer/.test(dom.window.document.querySelector('.dshsl-title').textContent), dom.window.document.querySelector('.dshsl-title').textContent)
 
-const saveButton = Array.from(panel.querySelectorAll('.dshsl-btn2')).find((node) => /保存|Save/.test(node.textContent))
-check('存在保存按钮', saveButton !== undefined)
+// Esc 关闭
 await act(async () => {
-  saveButton.dispatchEvent(new dom.window.MouseEvent('click', { bubbles: true }))
+  dom.window.document.querySelector('.dshsl-head .dshsl-x').dispatchEvent(new dom.window.MouseEvent('click', { bubbles: true }))
 })
 await tick()
-check('保存请求已发出', savedConfigRequest !== null)
-check('保存带最小强度', savedConfigRequest && savedConfigRequest.depth === 'minimal', JSON.stringify(savedConfigRequest && savedConfigRequest.depth))
-check('保存带详细度与场景', savedConfigRequest && savedConfigRequest.verbosity === 'standard' && savedConfigRequest.lens === 'auto', JSON.stringify([savedConfigRequest && savedConfigRequest.verbosity, savedConfigRequest && savedConfigRequest.lens]))
-check('保存带被取消的规则', savedConfigRequest && JSON.stringify(savedConfigRequest.disabledRules) === '["goal"]', JSON.stringify(savedConfigRequest && savedConfigRequest.disabledRules))
-check('保存不再提交旧 style 字段', savedConfigRequest && !('style' in savedConfigRequest), JSON.stringify(Object.keys(savedConfigRequest || {})))
-
+check('再次打开窗口', dom.window.document.querySelector('.dshsl-dialog') !== null)
 await act(async () => {
   dom.window.document.dispatchEvent(new dom.window.KeyboardEvent('keydown', { key: 'Escape', bubbles: true }))
 })
-const closingPanel = dom.window.document.querySelector('.dshsl-panel')
-check('Esc 先进入收回动画态', closingPanel !== null && closingPanel.getAttribute('data-closing') === '1', closingPanel && closingPanel.getAttribute('data-closing'))
 await act(async () => {
-  await new Promise((resolve) => setTimeout(resolve, 240))
+  await new Promise((resolve) => setTimeout(resolve, 40))
 })
-check('动画结束后浮层卸载', dom.window.document.querySelector('.dshsl-panel') === null)
+check('Esc 关闭窗口', dom.window.document.querySelector('.dshsl-dialog') === null)
+check('Esc 不会连带关掉浮层', dom.window.document.querySelector('.dshsl-panel') !== null)
 
 /* ------------------------------------------------------------------ */
 /* 5. 独立设置页                                                      */
