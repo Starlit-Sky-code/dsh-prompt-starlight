@@ -30,10 +30,8 @@
     "LICENSE",
     "NOTICE",
     "assets/icon.png",
-    "assets/icon-640.png",
-    "assets/social-preview.png",
-    "assets/icon-180.png",
     "assets/icon-ui.png",
+    "docs/screenshots",
     "market/index.json"
   ],
   "scripts": {
@@ -77,6 +75,10 @@
   },
   "engines": {
     "node": ">=20"
+  },
+  "publishConfig": {
+    "registry": "https://registry.npmjs.org/",
+    "access": "public"
   },
   "license": "AGPL-3.0-only"
 }

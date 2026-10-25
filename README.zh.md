@@ -150,6 +150,21 @@ http://127.0.0.1:19387/plugins/dsh-prompt-starlight/client.js
 | **npm** | `npm publish` 后可用 `dsh plugin add dsh-prompt-starlight` | ⏳ 需要 npm 登录后发布 |
 | 其他个人索引（如 Silentforfar 的市场） | 各作者自己的私有索引 | — 不往别人私人索引里塞条目 |
 
+### 发布到 npm（可选）
+
+```powershell
+npm login            # 只需一次；本包已把发布目标钉在官方源
+npm publish
+```
+
+之后就能用最简单的形式安装：
+
+```powershell
+dsh plugin add dsh-prompt-starlight
+```
+
+> `package.json` 里显式写了 `publishConfig.registry = https://registry.npmjs.org/`。这不是多余的：如果某个全局 `.npmrc` 把 registry 指到 `npm.pkg.github.com`，**即使已经登录也会一直报 `ENEEDAUTH`**，而报错信息只会说「你需要登录」，极难排查。钉死发布目标可以永久规避这一类问题。
+
 **发新版本时**索引必须同步，否则用户装到的还是旧 commit：
 
 ```powershell

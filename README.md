@@ -140,6 +140,21 @@ JSON with `providers` = host half alive. JavaScript = the browser half made it i
 | **npm** | `npm publish`, then `dsh plugin add dsh-prompt-starlight` | ⏳ needs an npm login |
 | Personal indexes (e.g. Silentforfar's market) | each author's private index | — not something to push an entry into |
 
+### Publishing to npm (optional)
+
+```powershell
+npm login            # once; the publish target is already pinned to the official registry
+npm publish
+```
+
+Then the shortest install form works:
+
+```powershell
+dsh plugin add dsh-prompt-starlight
+```
+
+> `package.json` pins `publishConfig.registry = https://registry.npmjs.org/` on purpose. If any global `.npmrc` points the registry at `npm.pkg.github.com`, **publishing fails with `ENEEDAUTH` even when you are logged in**, and the error only says "you need to log in" — a genuinely hard bug to trace. Pinning the target rules that failure mode out.
+
 **Every release must re-pin the index**, otherwise users install the old commit:
 
 ```powershell

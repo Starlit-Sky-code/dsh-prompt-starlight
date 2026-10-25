@@ -66,6 +66,25 @@ check('dsh.client.platform 是 web', pkg.dsh?.client?.platform === 'web', pkg.ds
 check('dsh.bundle.patch 指向存在的文件', typeof pkg.dsh?.bundle?.patch === 'string' && exists(pkg.dsh.bundle.patch), pkg.dsh?.bundle?.patch)
 check('files[] 包含 lib', Array.isArray(pkg.files) && pkg.files.includes('lib'))
 check('files[] 包含 patch 文件', Array.isArray(pkg.files) && pkg.files.includes('cordis.patch.yml'))
+check(
+  'files[] 包含运行时图标（/icon.png 路由要读它）',
+  Array.isArray(pkg.files) && pkg.files.includes('assets/icon-ui.png'),
+  JSON.stringify(pkg.files),
+)
+check('files[] 包含市场索引', Array.isArray(pkg.files) && pkg.files.includes('market/index.json'))
+
+// 发布目标必须钉死官方源。反面案例：publishConfig.registry 被写成
+// npm.pkg.github.com 时，即使已经 npm login 也会一直报 ENEEDAUTH。
+check(
+  'publishConfig.registry 钉在官方源',
+  pkg.publishConfig?.registry === 'https://registry.npmjs.org/',
+  JSON.stringify(pkg.publishConfig),
+)
+check('未把 private 设为 true（否则无法发布）', pkg.private !== true)
+check(
+  '没有指向 GitHub Packages 的 registry 残留',
+  !JSON.stringify(pkg).includes('npm.pkg.github.com'),
+)
 
 console.log('\n[4] cordis patch')
 
