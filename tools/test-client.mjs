@@ -410,7 +410,30 @@ check('右键打开浮层', panel !== null)
 // 模型必须排在第一位
 const firstRow = panel.querySelector('.dshsl-body .dshsl-row')
 check('第一项是模型', firstRow !== null && /模型|Model/.test(firstRow.textContent), firstRow && firstRow.textContent.slice(0, 40))
-check('模型控件在下拉里', firstRow !== null && firstRow.querySelector('.dshsl-select') !== null)
+check('模型用原生形态的选择行（不是系统下拉）', firstRow !== null && firstRow.querySelector('.dshsl-picker-row') !== null)
+check('页面上没有 <select> 元素（避免系统级弹出层）', panel.querySelector('select') === null)
+check('选择行显示当前值', firstRow !== null && /跟随会话|Follow/.test(firstRow.textContent), firstRow && firstRow.textContent.slice(0, 40))
+check('选择行带箭头', firstRow !== null && firstRow.querySelector('.dshsl-picker-caret') !== null)
+check('列表默认收起', panel.querySelector('.dshsl-picker-list') === null)
+
+await act(async () => {
+  firstRow.querySelector('.dshsl-picker-row').dispatchEvent(new dom.window.MouseEvent('click', { bubbles: true }))
+})
+const pickerList = panel.querySelector('.dshsl-picker-list')
+check('点开后出现选项列表', pickerList !== null)
+check('列表带 listbox 语义', pickerList !== null && pickerList.getAttribute('role') === 'listbox')
+const pickerOptions = pickerList === null ? [] : Array.from(pickerList.querySelectorAll('.dshsl-option[role=option]'))
+check('选项至少包含跟随会话 + 目录里的模型', pickerOptions.length >= 2, String(pickerOptions.length))
+check('跟随会话排在第一位', pickerOptions[0] !== undefined && (pickerOptions[0].getAttribute('aria-selected') === 'true'), pickerOptions[0] && pickerOptions[0].textContent)
+check('当前项有勾选标记', pickerOptions[0] !== undefined && pickerOptions[0].querySelector('.dshsl-option-check').textContent === '✓')
+check('有「重新读取目录」项', pickerList !== null && pickerList.querySelector('.dshsl-option-reload') !== null)
+
+// 选一个目录里的模型：列表应收起，且状态变脏
+await act(async () => {
+  pickerOptions[1].dispatchEvent(new dom.window.MouseEvent('click', { bubbles: true }))
+})
+check('选中后列表收起', panel.querySelector('.dshsl-picker-list') === null)
+check('选中后选择行显示新值', /DeepSeek/.test(panel.querySelector('.dshsl-picker-row').textContent), panel.querySelector('.dshsl-picker-row').textContent)
 check('浮层头部带插件图标', panel.querySelector('.dshsl-head img.dshsl-icon') !== null)
 
 // 两根滑块
@@ -464,7 +487,12 @@ check('保存不再提交旧 style 字段', savedConfigRequest && !('style' in s
 await act(async () => {
   dom.window.document.dispatchEvent(new dom.window.KeyboardEvent('keydown', { key: 'Escape', bubbles: true }))
 })
-check('Esc 关闭浮层', dom.window.document.querySelector('.dshsl-panel') === null)
+const closingPanel = dom.window.document.querySelector('.dshsl-panel')
+check('Esc 先进入收回动画态', closingPanel !== null && closingPanel.getAttribute('data-closing') === '1', closingPanel && closingPanel.getAttribute('data-closing'))
+await act(async () => {
+  await new Promise((resolve) => setTimeout(resolve, 240))
+})
+check('动画结束后浮层卸载', dom.window.document.querySelector('.dshsl-panel') === null)
 
 /* ------------------------------------------------------------------ */
 /* 5. 独立设置页                                                      */

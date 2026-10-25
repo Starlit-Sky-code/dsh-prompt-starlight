@@ -55,6 +55,10 @@ Popover (right-click / long-press) — four controls by default, everything else
 
 <img src="docs/screenshots/popover.png" width="380" alt="Starlight popover" />
 
+Model list expanded (the same row + chevron as DSH's native picker, no OS dropdown):
+
+<img src="docs/screenshots/popover-open.png" width="380" alt="Model list" />
+
 Settings page (Settings → Starlight) — model first, then the two sliders, the rest collapsed:
 
 <img src="docs/screenshots/settings.png" width="620" alt="Starlight settings page" />

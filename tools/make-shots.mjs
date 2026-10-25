@@ -196,12 +196,24 @@ async function renderReal(locale) {
     await new Promise((resolve) => setTimeout(resolve, 20))
   })
   let popHtml = ''
+  let popHtmlOpen = ''
   const panel = dom.window.document.querySelector('.dshsl-panel')
   if (panel !== null) {
     panel.removeAttribute('style')
     panel.style.position = 'relative'
     panel.style.maxHeight = 'none'
     popHtml = panel.outerHTML
+    // 再点开模型列表，拍一张「展开态」
+    const row = panel.querySelector('.dshsl-picker-row')
+    if (row !== null) {
+      await act(async () => {
+        row.dispatchEvent(new dom.window.MouseEvent('click', { bubbles: true }))
+      })
+      await act(async () => {
+        await new Promise((resolve) => setTimeout(resolve, 220))
+      })
+      popHtmlOpen = panel.outerHTML
+    }
   }
   await act(async () => {
     rootObj.unmount()
@@ -236,7 +248,7 @@ async function renderReal(locale) {
   const styleTag = dom.window.document.head.querySelector('style[data-plugin-css]')
   const css = styleTag === null ? '' : styleTag.textContent
   dom.window.close()
-  return { css, popHtml, pageHtml }
+  return { css, popHtml, popHtmlOpen, pageHtml }
 }
 
 /** 把图标换成 data URI，file:// 页面才不会破图。 */
@@ -279,6 +291,8 @@ const mkPage = (body, width, css, lang) => `<!doctype html>
 <html lang="${lang}"><head><meta charset="utf-8" />
 <style>${TOKENS}</style>
 <style data-preview="real-css">${css}</style>
+<!-- 截图要拍「最终态」：静态页会重新播放入场动画，必须关掉 -->
+<style>.dshsl-panel,.dshsl-picker-list,.dshsl-toast,.dshsl-skel-bar,.dshsl-star{animation:none !important;opacity:1 !important;transform:none !important}</style>
 </head><body><div class="shot" style="width:${width}px">${inlineIcon(body)}</div></body></html>`
 
 const written = []
@@ -296,6 +310,14 @@ for (const locale of ['zh', 'en']) {
   const popPng = path.join(outDir, `popover${suffix}.png`)
   shot(browser, popPage, popPng, 440, 620)
   written.push(popPng)
+
+  if (rendered.popHtmlOpen !== '') {
+    const openPage = path.join(work, `popover-open${suffix}.html`)
+    fs.writeFileSync(openPage, mkPage(rendered.popHtmlOpen, 400, rendered.css, locale === 'zh' ? 'zh-CN' : 'en'), 'utf8')
+    const openPng = path.join(outDir, `popover-open${suffix}.png`)
+    shot(browser, openPage, openPng, 440, 700)
+    written.push(openPng)
+  }
 
   const pagePage = path.join(work, `settings${suffix}.html`)
   fs.writeFileSync(

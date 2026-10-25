@@ -6,6 +6,16 @@ Chinese version: [CHANGELOG.zh-CN.md](CHANGELOG.zh-CN.md).
 
 ## [Unreleased]
 
+### Changed
+
+- **The model switcher follows DSH's native pattern**: a row with the label on the left, the current value on the right and a chevron, expanding into a list below, replaces the native `<select>`. On dark themes the OS dropdown pops up as a white sheet with its own font and colours; the list, its hover state, the check mark and the "re-read catalog" entry are now drawn by the plugin.
+- **The popover animates in and out**: it scales and fades in from the button's side (bottom right), and on close it plays the exit animation before unmounting. Everything is disabled under `prefers-reduced-motion`.
+- The settings page's model row drops the duplicated heading and left-aligns the value, matching the other native rows.
+
+### Fixed
+
+- The model note was clipped by the picker's rounded container.
+
 ## [0.4.1] - 2026-10-25
 
 ### Added
