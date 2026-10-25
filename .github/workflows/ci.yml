@@ -1,0 +1,69 @@
+# 星芒 · 提示词一键优化（dsh-prompt-starlight）
+# Copyright (c) 2026 Starlit Sky · SPDX-License-Identifier: AGPL-3.0-only
+# https://github.com/Starlit-Sky-code/dsh-prompt-starlight
+#
+# 每次推送到 main 或提 PR 都跑一遍全部检查。
+# 跑的就是本地那几条命令，所以「本地绿 = CI 绿」不会分叉。
+name: CI
+
+on:
+  push:
+    branches: [main]
+  pull_request:
+  workflow_dispatch:
+
+permissions:
+  contents: read
+
+jobs:
+  test:
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@v4
+
+      - uses: actions/setup-node@v4
+        with:
+          node-version: '24'
+
+      # tools/fixture 是测试用的 React/jsdom 沙箱，不随包发布
+      - name: 安装测试夹具
+        run: npm install --prefix tools/fixture --no-audit --no-fund
+
+      # 根依赖只有一个：官方市场索引校验器
+      - name: 安装根依赖
+        run: npm install --no-audit --no-fund
+
+      - name: 署名头检查（17+ 个源文件）
+        run: node tools/stamp-signature.mjs --check
+
+      - name: 包形状与署名（299 项断言）
+        run: node tools/test-package.mjs
+
+      - name: 宿主半部（86 项断言）
+        run: node tools/test-host.mjs
+
+      - name: 浏览器半部（96 项断言）
+        run: node tools/test-client.mjs
+
+      # 复刻宿主的 readPluginMeta 规则：图标相对路径、≤256 KiB、locale/exports
+      - name: 插件卡片元数据（图标 + 本地化）
+        run: node tools/check-plugin-meta.mjs
+
+      - name: 市场索引格式 1 校验
+        run: node tools/validate-market.mjs
+
+      # 防止 files[] 把不该发的图带进包（历史上就吃过大图亏）
+      - name: 打包体积不超过 2 MB
+        run: |
+          npm pack --dry-run --json > /tmp/pack.json 2>/dev/null
+          node -e '
+            const fs = require("node:fs")
+            const raw = fs.readFileSync("/tmp/pack.json", "utf8")
+            const info = JSON.parse(raw.slice(raw.indexOf("[")))[0]
+            const mb = info.unpackedSize / 1024 / 1024
+            console.log(`解包体积 ${mb.toFixed(2)} MB，文件数 ${info.entryCount}`)
+            if (mb > 2) {
+              console.error("包超过 2 MB，检查 files[] 是否把不该发的图带进来了")
+              process.exit(1)
+            }
+          '

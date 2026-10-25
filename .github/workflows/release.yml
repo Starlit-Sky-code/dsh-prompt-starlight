@@ -1,0 +1,142 @@
+# 星芒 · 提示词一键优化（dsh-prompt-starlight）
+# Copyright (c) 2026 Starlit Sky · SPDX-License-Identifier: AGPL-3.0-only
+# https://github.com/Starlit-Sky-code/dsh-prompt-starlight
+#
+# 推一个 v* tag 就发版：先跑全量检查 → 打 tgz → 建/更新 Release 并上传资产
+# → 把市场索引重钉到这个 tag 的提交 →（可选）发布到 npm。
+#
+# 用法：
+#   npm version 0.4.2 --no-git-tag-version   # 改版本号（同时要更新 lib/*.js 里的版本串）
+#   git commit -am "chore: v0.4.2"
+#   git tag v0.4.2 && git push origin main --tags
+name: Release
+
+on:
+  push:
+    tags: ['v*']
+  workflow_dispatch:
+    inputs:
+      tag:
+        description: '要发布的 tag（形如 v0.4.2）'
+        required: true
+
+permissions:
+  contents: write
+
+jobs:
+  release:
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@v4
+        with:
+          fetch-depth: 0
+
+      - uses: actions/setup-node@v4
+        with:
+          node-version: '24'
+
+      # tag 必须是 vX.Y.Z，且与 package.json 的 version 完全一致。
+      # 不一致就停下——否则会发出一个索引指向错误版本号的市场条目。
+      - name: 校验版本一致性
+        id: version
+        run: |
+          TAG="${{ inputs.tag || github.ref_name }}"
+          VERSION="${TAG#v}"
+          PKG=$(node -p "require('./package.json').version")
+          echo "tag=$TAG" >> "$GITHUB_OUTPUT"
+          echo "version=$VERSION" >> "$GITHUB_OUTPUT"
+          echo "tag=$TAG，package.json=$PKG"
+          if [ "$TAG" = "$VERSION" ]; then
+            echo "::error::tag 必须以 v 开头（例如 v1.2.3）"
+            exit 1
+          fi
+          if [ "$VERSION" != "$PKG" ]; then
+            echo "::error::tag 版本 $VERSION 与 package.json 的 $PKG 不一致"
+            exit 1
+          fi
+
+      - name: 安装测试夹具
+        run: npm install --prefix tools/fixture --no-audit --no-fund
+
+      - name: 安装根依赖
+        run: npm install --no-audit --no-fund
+
+      # 发版前必须全绿：不许发出未经测试的包
+      - name: 署名头检查
+        run: node tools/stamp-signature.mjs --check
+
+      - name: 包形状与署名
+        run: node tools/test-package.mjs
+
+      - name: 宿主半部
+        run: node tools/test-host.mjs
+
+      - name: 浏览器半部
+        run: node tools/test-client.mjs
+
+      - name: 插件卡片元数据
+        run: node tools/check-plugin-meta.mjs
+
+      - name: 市场索引格式 1 校验
+        run: node tools/validate-market.mjs
+
+      - name: 打 tgz
+        id: pack
+        run: |
+          npm pack --pack-destination . >/dev/null 2>&1
+          TGZ=$(ls -1 dsh-prompt-starlight-*.tgz | head -n 1)
+          echo "tgz=$TGZ" >> "$GITHUB_OUTPUT"
+          ls -l "$TGZ"
+
+      - name: 建或更新 Release 并上传资产
+        env:
+          GH_TOKEN: ${{ secrets.GITHUB_TOKEN }}
+        run: |
+          TAG="${{ steps.version.outputs.tag }}"
+          TGZ="${{ steps.pack.outputs.tgz }}"
+          # 说明文字写进文件再传给 gh，避免多行引号在 shell 里出事
+          {
+            printf '%s\n\n' "全部检查通过后自动打出的 tarball。"
+            printf '```\n'
+            printf 'dsh plugin add https://github.com/Starlit-Sky-code/dsh-prompt-starlight/releases/download/%s/%s\n' "$TAG" "$TGZ"
+            printf '```\n\n'
+            printf '%s\n' "by Starlit Sky · AGPL-3.0"
+          } > /tmp/notes.md
+          if gh release view "$TAG" >/dev/null 2>&1; then
+            echo "Release $TAG 已存在，覆盖资产"
+            gh release upload "$TAG" "$TGZ" --clobber
+          else
+            gh release create "$TAG" "$TGZ" --title "$TAG" --notes-file /tmp/notes.md
+          fi
+
+      # 把市场索引钉到本 tag 指向的提交。DSH 安装时按这个 40 位 commit 取源码，
+      # 所以不重钉的话，用户从索引装到的还是上一个版本。
+      - name: 重钉市场索引（提交到 main）
+        env:
+          GH_TOKEN: ${{ secrets.GITHUB_TOKEN }}
+        run: |
+          git config user.name  "github-actions[bot]"
+          git config user.email "41898282+github-actions[bot]@users.noreply.github.com"
+          node tools/pin-market.mjs "$GITHUB_SHA" "${{ steps.version.outputs.version }}"
+          node tools/validate-market.mjs
+          if git diff --quiet -- market/index.json; then
+            echo "索引无需变更"
+            exit 0
+          fi
+          git add market/index.json
+          git commit -m "chore: 市场索引重新钉到 ${{ steps.version.outputs.tag }}（${GITHUB_SHA:0:7}）"
+          git push origin HEAD:main
+
+      # 可选：配置 secret NPM_TOKEN 才会执行。
+      # 账号开了 2FA（tfa=auth-and-writes）时，**必须**用勾了 Bypass 2FA 的
+      # Granular Access Token，否则 npm 会返回 403，而不是提示你输入验证码。
+      - name: 发布到 npm（配置了 NPM_TOKEN 才跑）
+        env:
+          NODE_AUTH_TOKEN: ${{ secrets.NPM_TOKEN }}
+        if: env.NODE_AUTH_TOKEN != ''
+        run: |
+          if npm view "$(node -p "require('./package.json').name")@${{ steps.version.outputs.version }}" version >/dev/null 2>&1; then
+            echo "该版本已在 registry 上，跳过"
+            exit 0
+          fi
+          npm publish --no-audit --no-fund

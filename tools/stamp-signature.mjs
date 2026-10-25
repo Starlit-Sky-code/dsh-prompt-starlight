@@ -63,6 +63,8 @@ const TARGETS = [
   { glob: ['tools'], ext: ['.py'], banner: PY_BANNER },
   { glob: ['design'], ext: ['.html'], banner: HTML_BANNER },
   { glob: [''], ext: ['.yml'], banner: HASH_BANNER },
+  // GitHub Actions 工作流也是这份代码的一部分，一并署名
+  { glob: [path.join('.github', 'workflows')], ext: ['.yml'], banner: HASH_BANNER },
 ]
 
 function walk(dir, out) {

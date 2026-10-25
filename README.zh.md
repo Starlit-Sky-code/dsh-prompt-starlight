@@ -9,7 +9,7 @@
 <p align="center">
   <img alt="license AGPL-3.0" src="https://img.shields.io/badge/license-AGPL--3.0-ff9d32" />
   <img alt="version" src="https://img.shields.io/badge/version-0.4.1-4d6bfe" />
-  <img alt="tests" src="https://img.shields.io/badge/tests-299%20passing-2f9e44" />
+  <img alt="tests" src="https://img.shields.io/badge/tests-304%20passing-2f9e44" />
   <img alt="DSH" src="https://img.shields.io/badge/DSH-0.2.0--rc.2-8a8f98" />
 </p>
 
@@ -177,12 +177,35 @@ dsh plugin add dsh-prompt-starlight
 
 > `package.json` 里显式写了 `publishConfig.registry = https://registry.npmjs.org/`。这不是多余的：如果某个全局 `.npmrc` 把 registry 指到 `npm.pkg.github.com`，**即使已经登录也会一直报 `ENEEDAUTH`**，而报错信息只会说「你需要登录」，极难排查。钉死发布目标可以永久规避这一类问题。
 
-**发新版本时**索引必须同步，否则用户装到的还是旧 commit：
+### 发版：推一个 tag 就够了
+
+```powershell
+# 1) 改版本号（package.json + lib/index.js 两处 version + lib/client.js 的水印与「关于」）
+# 2) 提交后打 tag
+git tag v0.4.2
+git push origin main --tags
+```
+
+推上去之后 `.github/workflows/release.yml` 会自动：
+
+1. 校验 tag 与 `package.json` 版本一致（不一致直接失败，避免发出错版本的市场条目）
+2. 跑全部检查：署名头、三类测试、插件卡片元数据、市场索引格式校验
+3. `npm pack` 并建/更新 Release，把 tgz 传上去
+4. **把市场索引重钉到这个 tag 的提交**并提交回 main —— 不做这步，用户从索引装到的还是旧 commit
+5. 配了 `NPM_TOKEN` 就顺手发 npm
+
+> 每次 push / PR 也会跑 `.github/workflows/ci.yml`（同一批检查 + 打包体积 ≤ 2 MB 的守卫）。
+
+手想要本地做也行，两条命令等价：
 
 ```powershell
 npm run market           # 把 index.json 钉到当前 HEAD 与 package.json 的版本
 npm run market:validate  # 官方校验器验一遍
 ```
+
+### 可选：让 CI 发 npm
+
+在仓库 **Settings → Secrets and variables → Actions** 加一个 `NPM_TOKEN`。注意它**必须是勾了 Bypass 2FA 的 Granular Access Token**——账号 2FA 模式是 `auth-and-writes` 时，普通 token 会在 `npm publish` 处收到 403，而不是提示输入验证码。不配这个 secret，发布那步会自动跳过。
 
 ---
 

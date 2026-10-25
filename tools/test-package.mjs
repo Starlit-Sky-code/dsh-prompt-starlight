@@ -246,12 +246,18 @@ console.log('\n[8] 署名与版权')
 
 const MARK = 'Starlit Sky'
 
-// 所有需要署名的源文件：lib/*.js、tools/*.mjs、tools/*.py、cordis.patch.yml
+// 所有需要署名的源文件：lib/*.js、tools/*.mjs、tools/*.py、cordis.patch.yml、
+// 以及 .github/workflows/*.yml（工作流也是这份代码的一部分）
+const workflowsDir = path.join(root, '.github', 'workflows')
+const workflowFiles = fs.existsSync(workflowsDir)
+  ? fs.readdirSync(workflowsDir).filter((n) => n.endsWith('.yml')).map((n) => `.github/workflows/${n}`)
+  : []
+
 const signedFiles = [
   ...fs.readdirSync(path.join(root, 'lib')).filter((n) => n.endsWith('.js')).map((n) => `lib/${n}`),
   ...fs.readdirSync(path.join(root, 'tools')).filter((n) => n.endsWith('.mjs') || n.endsWith('.py')).map((n) => `tools/${n}`),
   'cordis.patch.yml',
-
+  ...workflowFiles,
 ]
 
 const unsigned = signedFiles.filter((relative) => !read(relative).slice(0, 400).includes(MARK))
@@ -263,6 +269,12 @@ check('署名含 SPDX 许可标识', clientHead.includes('SPDX-License-Identifie
 check('署名含仓库地址', clientHead.includes('github.com/Starlit-Sky-code/dsh-prompt-starlight'))
 check('客户端有运行时署名水印', client.includes('__starlightSigned'))
 check('宿主有启动署名日志', read('lib/index.js').includes('[dsh-prompt-starlight] 星芒 · Starlit Sky'))
+
+check('工作流文件存在且带署名', workflowFiles.length >= 2 && workflowFiles.every((f) => read(f).includes(MARK)), workflowFiles.join(', '))
+check('CI 工作流在 main push 与 PR 上触发', read('.github/workflows/ci.yml').includes('branches: [main]') && read('.github/workflows/ci.yml').includes('pull_request'))
+check('Release 工作流由 v* tag 触发', read('.github/workflows/release.yml').includes("tags: ['v*']"))
+check('Release 工作流会重钉市场索引', read('.github/workflows/release.yml').includes('pin-market.mjs'))
+check('Release 工作流发布前跑测试', read('.github/workflows/release.yml').includes('test-host.mjs') && read('.github/workflows/release.yml').includes('test-client.mjs'))
 
 check('package.json author 为 Starlit Sky', pkg.author?.name === MARK, JSON.stringify(pkg.author))
 check('package.json license 为 AGPL-3.0-only', pkg.license === 'AGPL-3.0-only', pkg.license)

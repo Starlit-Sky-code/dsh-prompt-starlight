@@ -9,7 +9,7 @@
 <p align="center">
   <img alt="license AGPL-3.0" src="https://img.shields.io/badge/license-AGPL--3.0-ff9d32" />
   <img alt="version" src="https://img.shields.io/badge/version-0.4.1-4d6bfe" />
-  <img alt="tests" src="https://img.shields.io/badge/tests-299%20passing-2f9e44" />
+  <img alt="tests" src="https://img.shields.io/badge/tests-304%20passing-2f9e44" />
   <img alt="DSH" src="https://img.shields.io/badge/DSH-0.2.0--rc.2-8a8f98" />
 </p>
 
@@ -168,12 +168,36 @@ dsh plugin add dsh-prompt-starlight
 
 > `package.json` pins `publishConfig.registry = https://registry.npmjs.org/` on purpose. If any global `.npmrc` points the registry at `npm.pkg.github.com`, **publishing fails with `ENEEDAUTH` even when you are logged in**, and the error only says "you need to log in" — a genuinely hard bug to trace. Pinning the target rules that failure mode out.
 
-**Every release must re-pin the index**, otherwise users install the old commit:
+### Releasing: push a tag
+
+```powershell
+# 1) bump the version (package.json + the two version strings in lib/index.js
+#    + the watermark and About line in lib/client.js)
+# 2) commit, then tag
+git tag v0.4.2
+git push origin main --tags
+```
+
+`.github/workflows/release.yml` then:
+
+1. Checks the tag matches `package.json` (mismatch fails, so a wrong version can never reach the market index)
+2. Runs every check: signature headers, all three test suites, plugin-card metadata, market-index format
+3. `npm pack`, then creates or updates the Release and uploads the tgz
+4. **Re-pins the market index to the tagged commit** and commits it back to main — without this, users installing from the index get the previous commit
+5. Publishes to npm when `NPM_TOKEN` is configured
+
+> Every push and PR also runs `.github/workflows/ci.yml` — the same checks plus a 2 MB unpacked-size guard.
+
+Locally, the equivalent is two commands:
 
 ```powershell
 npm run market           # pin index.json to HEAD + the package.json version
 npm run market:validate  # run the official validator
 ```
+
+### Optional: let CI publish to npm
+
+Add an `NPM_TOKEN` secret under **Settings → Secrets and variables → Actions**. It **must be a Granular Access Token with "Bypass 2FA" enabled**: with `tfa=auth-and-writes`, a plain token gets a 403 at `npm publish` instead of being prompted for a code. Without the secret the publish step skips itself.
 
 ---
 
