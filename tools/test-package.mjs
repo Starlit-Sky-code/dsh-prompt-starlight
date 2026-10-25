@@ -201,6 +201,13 @@ function gitTracked(pattern) {
 // 真正要防的是「把 node_modules 提交进仓库」和「把它发进包」，
 // 而不是「本机装过依赖」——CI 里 npm install 必然会创建这个目录。
 check('node_modules 没有被 git 跟踪', gitTracked('node_modules') === '', gitTracked('node_modules').split('\n').slice(0, 3).join(', '))
+// 源头上防住：.gitignore 必须忽略 node_modules，否则一次 git add -A 就会把它整包提交
+const gitignore = exists('.gitignore') ? read('.gitignore') : ''
+check(
+  '.gitignore 忽略根 node_modules',
+  gitignore.split('\n').some((line) => line.trim() === 'node_modules/' || line.trim() === 'node_modules'),
+  JSON.stringify(gitignore.split('\n').filter((line) => line.includes('node_modules'))),
+)
 check(
   'files[] 不含 node_modules 与测试夹具',
   Array.isArray(pkg.files) && !pkg.files.some((entry) => /node_modules|^tools/.test(entry)),

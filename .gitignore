@@ -13,3 +13,5 @@ tools/extract/
 .DS_Store
 Thumbs.db
 *.log
+# 根依赖（只有官方市场索引校验器）不进仓库
+node_modules/
