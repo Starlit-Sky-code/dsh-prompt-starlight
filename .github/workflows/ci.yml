@@ -36,7 +36,7 @@ jobs:
       - name: 署名头检查（20 个源文件）
         run: node tools/stamp-signature.mjs --check
 
-      - name: 包形状与署名（127 项断言）
+      - name: 包形状与署名（130 项断言）
         run: node tools/test-package.mjs
 
       - name: 宿主半部（86 项断言）

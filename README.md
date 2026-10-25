@@ -9,7 +9,7 @@
 <p align="center">
   <img alt="license AGPL-3.0" src="https://img.shields.io/badge/license-AGPL--3.0-ff9d32" />
   <img alt="version" src="https://img.shields.io/badge/version-0.4.1-4d6bfe" />
-  <img alt="tests" src="https://img.shields.io/badge/tests-309%20passing-2f9e44" />
+  <img alt="tests" src="https://img.shields.io/badge/tests-312%20passing-2f9e44" />
   <img alt="DSH" src="https://img.shields.io/badge/DSH-0.2.0--rc.2-8a8f98" />
 </p>
 
@@ -199,9 +199,21 @@ npm run market:validate  # run the official validator
 
 npm's recommended path is **OIDC trusted publishing**, not a long-lived "Bypass 2FA" token — that token is a key that skips the one-time code entirely, so leaking it is far worse than a leaked OTP.
 
+**Bootstrap order matters**: trusted publishing is configured on an *existing* package's settings page, and there is no such entry until the package exists. So the first version has to go out with a token, and the token gets revoked right after:
+
+| Step | Action |
+|---|---|
+| 1 | Create a Granular Access Token: **7-day expiry, this package only, "Bypass 2FA" checked** |
+| 2 | Publish the first version with it: `npm publish --//registry.npmjs.org/:_authToken=npm_xxx` |
+| 3 | The package now exists → its **Trusted publishing** settings appear; configure the fields below |
+| 4 | **Revoke the token** (Access Tokens → Delete) |
+| 5 | Package settings → **Publishing access** → *Require two-factor authentication and disallow tokens* |
+
+Every later version then goes through OIDC, with no long-lived credential anywhere.
+
 One-time setup:
 
-1. npmjs.com → account → **Trusted Publishers** → **Add trusted publisher** (works before the package is published)
+1. npmjs.com → **Packages → dsh-prompt-starlight → Settings → Trusted publishing** → **Add trusted publisher**
 
    | Field | Value |
    |---|---|

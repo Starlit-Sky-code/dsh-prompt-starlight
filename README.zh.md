@@ -9,7 +9,7 @@
 <p align="center">
   <img alt="license AGPL-3.0" src="https://img.shields.io/badge/license-AGPL--3.0-ff9d32" />
   <img alt="version" src="https://img.shields.io/badge/version-0.4.1-4d6bfe" />
-  <img alt="tests" src="https://img.shields.io/badge/tests-309%20passing-2f9e44" />
+  <img alt="tests" src="https://img.shields.io/badge/tests-312%20passing-2f9e44" />
   <img alt="DSH" src="https://img.shields.io/badge/DSH-0.2.0--rc.2-8a8f98" />
 </p>
 
@@ -207,9 +207,21 @@ npm run market:validate  # 官方校验器验一遍
 
 npm 官方推荐的做法是 **OIDC 免密钥发布**，而不是建一个「Bypass 2FA」的长期 token——后者等于一把能绕过验证码的钥匙，一旦泄漏后果比一次性验证码严重得多。
 
+**引导顺序很重要**：Trusted Publishing 的配置入口在**已存在的包**的设置页下，包还没发布时账号里找不到这个入口。所以必须先"用一次 token 把包发出来"，再切到 OIDC、最后吊销 token：
+
+| 步骤 | 做什么 |
+|---|---|
+| 1 | 建一个 **7 天有效、只授权本包、勾 Bypass 2FA** 的 Granular Access Token |
+| 2 | 用它发首版：`npm publish --//registry.npmjs.org/:_authToken=npm_xxx` |
+| 3 | 包已存在 → 包设置页出现 **Trusted publishing** 入口，按下面 6 个字段配置 |
+| 4 | **吊销那个 token**（Access Tokens → Delete） |
+| 5 | 包设置 → **Publishing access** → 选 *Require two-factor authentication and disallow tokens* |
+
+之后所有版本都走 OIDC，不存在任何长期凭据。
+
 一次性配置：
 
-1. npmjs.com → 账号 → **Trusted Publishers** → **Add trusted publisher**（包还没发布也能预配置）
+1. npmjs.com → **Packages → dsh-prompt-starlight → Settings → Trusted publishing** → **Add trusted publisher**
 
    | 字段 | 值 |
    |---|---|

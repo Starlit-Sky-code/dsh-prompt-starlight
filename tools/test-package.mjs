@@ -303,6 +303,13 @@ check('Release 工作流会重钉市场索引', read('.github/workflows/release.
 check('Release 工作流申请了 OIDC 权限（Trusted Publishing 必需）', /^\s{2}id-token:\s*write$/m.test(read('.github/workflows/release.yml')))
 check('Release 工作流不再依赖长期 NPM_TOKEN 发布', !read('.github/workflows/release.yml').includes('secrets.NPM_TOKEN'))
 check('npm 发布由仓库变量 NPM_PUBLISH 控制', read('.github/workflows/release.yml').includes("vars.NPM_PUBLISH == 'true'"))
+
+// 文档必须说清引导顺序：Trusted Publishing 只能配在已存在的包上，
+// 首版必须先用一次 token 发出来，然后立刻吊销。
+const zhReadme = read('README.zh.md')
+check('README 说明 TP 需要包已存在才能配置', zhReadme.includes('包还没发布时账号里找不到这个入口'))
+check('README 要求吊销引导用的 token', zhReadme.includes('**吊销那个 token**'))
+check('README 要求发布后禁止 token 发布', zhReadme.includes('disallow tokens') || zhReadme.includes('禁止'))
 check('Release 工作流发布前跑测试', read('.github/workflows/release.yml').includes('test-host.mjs') && read('.github/workflows/release.yml').includes('test-client.mjs'))
 
 check('package.json author 为 Starlit Sky', pkg.author?.name === MARK, JSON.stringify(pkg.author))
