@@ -120,11 +120,67 @@ for (const relative of [
   'NOTICE',
   'assets/icon.png',
   'assets/icon-640.png',
+  'assets/icon-180.png',
+  'assets/icon-ui.png',
   'assets/social-preview.png',
+  'market/index.json',
+  'market/awesome-entry.yml',
+  'docs/screenshots/popover.zh.png',
+  'docs/screenshots/settings.zh.png',
 ]) {
   check(`存在 ${relative}`, exists(relative))
 }
 check('没有把 node_modules 打进包', !exists('node_modules'))
+
+console.log('\n[9] 插件市场索引')
+
+// DSH 没有官方市场：市场就是一个 format 1 的 JSON 索引。
+// 这里只做结构断言；完整校验用官方校验器（npm run market:validate）。
+const marketIndex = (() => {
+  try {
+    return JSON.parse(read('market/index.json'))
+  } catch {
+    return null
+  }
+})()
+
+check('index.json 可解析', marketIndex !== null)
+check('format 为 1', marketIndex?.format === 1, String(marketIndex?.format))
+check('有标题与描述', typeof marketIndex?.title?.en === 'string' && typeof marketIndex?.description?.en === 'string')
+check('声明了分类', Object.keys(marketIndex?.metadata?.categories ?? {}).length > 0)
+
+const marketPlugin = marketIndex?.plugins?.[0]
+check('列出的就是本包', marketPlugin?.name === pkg.name, marketPlugin?.name)
+check('插件版本与 package.json 一致', marketPlugin?.versions?.[0]?.version === pkg.version, `${marketPlugin?.versions?.[0]?.version} vs ${pkg.version}`)
+check(
+  '版本钉死 40 位 commit',
+  /^[0-9a-f]{40}$/.test(String(marketPlugin?.versions?.[0]?.source?.commit)),
+  String(marketPlugin?.versions?.[0]?.source?.commit),
+)
+check('来源类型为 git', marketPlugin?.versions?.[0]?.source?.type === 'git')
+check(
+  'git 地址指向本仓库',
+  String(marketPlugin?.versions?.[0]?.source?.url).includes('Starlit-Sky-code/dsh-prompt-starlight'),
+  String(marketPlugin?.versions?.[0]?.source?.url),
+)
+check('图标是内联 data URL（不依赖第二个文件可达）', String(marketPlugin?.icon).startsWith('data:image/png;base64,'))
+check(
+  '内联图标解码后不超过 32 KiB',
+  Math.round(((marketPlugin?.icon?.length ?? 0) * 3) / 4) <= 32 * 1024,
+  String(Math.round(((marketPlugin?.icon?.length ?? 0) * 3) / 4)),
+)
+check('分类已在 metadata 里声明', (marketIndex?.metadata?.categories ?? {})[marketPlugin?.metadata?.category] !== undefined)
+check(
+  '每个 label 都已声明',
+  (marketPlugin?.metadata?.labels ?? []).every((label) => (marketIndex?.metadata?.labels ?? {})[label] !== undefined),
+  JSON.stringify(marketPlugin?.metadata?.labels),
+)
+
+const awesomeEntry = exists('market/awesome-entry.yml') ? read('market/awesome-entry.yml') : ''
+check('awesome 条目含仓库 url', awesomeEntry.includes('url: https://github.com/Starlit-Sky-code/dsh-prompt-starlight'))
+check('awesome 条目含 category', /^category: \w+$/m.test(awesomeEntry))
+check('awesome 条目含英文描述（以句号结尾）', /^\s{2}en: .*\.$/m.test(awesomeEntry))
+check('awesome 条目声明了 dsh.bundle 前置条件的备注', awesomeEntry.includes('dsh.bundle.patch'))
 
 console.log('\n[8] 署名与版权')
 

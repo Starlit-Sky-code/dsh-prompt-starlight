@@ -72,13 +72,34 @@ Settings page (Settings → Starlight) — model first, then the two sliders, th
 
 One npm package = one host half + one browser half.
 
-### A. GUI (recommended)
+### A. Install from a plugin market (recommended)
 
-1. DSH → **Settings → Plugins**
-2. Install a local plugin, pointing at this directory (e.g. `D:\plugins\dsh-prompt-starlight`)
-3. Refresh the page
+DSH ships no official market — **a "market" is a `format: 1` JSON index hosted at any https URL**. This repository carries one, so you can treat it as a market listing just this plugin:
 
-### B. Link it into the current profile
+1. Sidebar **Plugins** → **More** next to **Experimental plugins** → enable **Custom plugin markets**
+2. Open **Discover** and add the index URL:
+
+   ```text
+   https://cdn.jsdelivr.net/gh/Starlit-Sky-code/dsh-prompt-starlight@main/market/index.json
+   ```
+
+   Fallback (when jsDelivr is unreachable):
+
+   ```text
+   https://raw.githubusercontent.com/Starlit-Sky-code/dsh-prompt-starlight/main/market/index.json
+   ```
+
+3. Install from the list. DSH installs it into the current profile **pinned to the exact 40-character commit** in the index, so the result is reproducible.
+
+> The index is validated with the official `@deepseek-ai/dsh-plugin-market-index` (`npm run market:validate`). The host caches a successful read for ten minutes, so a release is not visible instantly.
+
+### B. Install a pinned commit directly
+
+```powershell
+dsh plugin add "git+https://github.com/Starlit-Sky-code/dsh-prompt-starlight.git#<40-char-commit>"
+```
+
+### C. Link this directory into the current profile (local development)
 
 ```powershell
 $profile = "$env:DSH_HOME\profiles\desktop"
@@ -102,6 +123,23 @@ http://127.0.0.1:19387/plugins/dsh-prompt-starlight/client.js
 ```
 
 JSON with `providers` = host half alive. JavaScript = the browser half made it into the boot graph. Both fine but no star? Hard-refresh (`Ctrl+Shift+R`).
+
+### Where it is listed
+
+| Channel | Mechanism | Status |
+|---|---|---|
+| **Index in this repository** | `market/index.json` (format 1, official validator passes) | ✅ live, URL above |
+| **[awesome-dsh-plugin](https://github.com/awesome-dsh-plugin/awesome-dsh-plugin)** | one PR adding `data/plugins/<owner>__<repo>.yml` | 📝 entry ready in `market/awesome-entry.yml`, pending the "repo at least 1 day old" gate |
+| **[dshbase.com](https://dshbase.com/plugins/directory/)** | per their docs, adding the `dsh-plugin` GitHub topic is what makes a repo discoverable | ⏳ topic still to add |
+| **npm** | `npm publish`, then `dsh plugin add dsh-prompt-starlight` | ⏳ needs an npm login |
+| Personal indexes (e.g. Silentforfar's market) | each author's private index | — not something to push an entry into |
+
+**Every release must re-pin the index**, otherwise users install the old commit:
+
+```powershell
+npm run market           # pin index.json to HEAD + the package.json version
+npm run market:validate  # run the official validator
+```
 
 ---
 

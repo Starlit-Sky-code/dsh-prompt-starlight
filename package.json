@@ -31,7 +31,10 @@
     "NOTICE",
     "assets/icon.png",
     "assets/icon-640.png",
-    "assets/social-preview.png"
+    "assets/social-preview.png",
+    "assets/icon-180.png",
+    "assets/icon-ui.png",
+    "market/index.json"
   ],
   "scripts": {
     "test": "node tools/test-package.mjs && node tools/test-host.mjs && node tools/test-client.mjs",
@@ -40,6 +43,8 @@
     "test:client": "node tools/test-client.mjs",
     "preview": "node tools/make-preview.mjs && node tools/check-preview.mjs",
     "assets": "python tools/make-assets.py",
+    "market": "node tools/pin-market.mjs",
+    "market:validate": "node tools/validate-market.mjs",
     "sign": "node tools/stamp-signature.mjs",
     "sign:check": "node tools/stamp-signature.mjs --check",
     "install:profile": "node tools/install-profile.mjs"
@@ -64,6 +69,9 @@
     "url": "https://github.com/Starlit-Sky-code/dsh-prompt-starlight/issues"
   },
   "homepage": "https://github.com/Starlit-Sky-code/dsh-prompt-starlight#readme",
+  "devDependencies": {
+    "@deepseek-ai/dsh-plugin-market-index": "0.2.1-rc.2"
+  },
   "peerDependencies": {
     "@deepseek-ai/cordis": "~4.0.4"
   },

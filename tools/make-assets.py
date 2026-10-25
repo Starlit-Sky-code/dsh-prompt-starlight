@@ -76,6 +76,8 @@ def main() -> None:
     src.resize((640, 640), Image.LANCZOS).save(ASSETS / "icon-640.png", "PNG")
     # 插件界面里最大只显示 40px，96px 足够 2x，体积压到十几 KB
     src.resize((96, 96), Image.LANCZOS).save(ASSETS / "icon-ui.png", "PNG", optimize=True)
+    # awesome-dsh-plugin 要求市场卡片用 GitHub 托管的位图（180px 惯例尺寸）
+    src.resize((180, 180), Image.LANCZOS).save(ASSETS / "icon-180.png", "PNG", optimize=True)
 
     # —— 社交预览 1280×640 ——
     W, H = 1280, 640

@@ -1,0 +1,26 @@
+# awesome-dsh-plugin 投稿条目（可直接复制）
+#
+# 收录机制：往 https://github.com/awesome-dsh-plugin/awesome-dsh-plugin 提一个 PR，
+# 只加**一个文件** data/plugins/Starlit-Sky-code__dsh-prompt-starlight.yml，
+# 内容就是下面这 7 行。两个 README 由脚本从 data/plugins/*.yml 生成，不要手工改。
+#
+# 提交前确认两件事（CI 会自动查）：
+#   1. 仓库已满 1 天（本仓库创建于 2026-10-24 22:27 +0800，满 1 天后才可提交）；
+#   2. 仓库已添加 `dsh-plugin` topic（Settings → Topics，网页点一次）。
+#
+# 前置条件（已满足，仅备查）：
+#   - package.json 声明 dsh.bundle.patch  → 是
+#   - 仓库根有 cordis.patch.yml           → 是
+#   - 有真实可用的代码                    → 是
+#
+# 可选但推荐：发 npm 或挂 GitHub Release tarball，安装时免「构建授权」步骤。
+# 若挂 tarball，请让资产名不带版本号，或钉住 release tag：
+#   tarball: https://github.com/Starlit-Sky-code/dsh-prompt-starlight/releases/latest/download/dsh-prompt-starlight.tgz
+
+url: https://github.com/Starlit-Sky-code/dsh-prompt-starlight
+name: Starlit-Sky-code/dsh-prompt-starlight
+category: ui
+description:
+  en: Adds a star button to the left of the composer that rewrites the draft into a more structured prompt, with two sliders for rewrite strength and detail, a model switcher, and 11 built-in rules that can be toggled.
+  zh: 在输入框工具行左侧加一个四角星按钮，一键把草稿改写成更有结构的提示词；提供强度与详细度两根滑块、模型切换，以及 11 条可开关的内置规则。
+icon: https://raw.githubusercontent.com/Starlit-Sky-code/dsh-prompt-starlight/main/assets/icon-180.png

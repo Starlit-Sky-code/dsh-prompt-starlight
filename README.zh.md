@@ -73,13 +73,36 @@ DSH 输入框工具行**左侧**的**圆形四角星**按钮（自带一圈描�
 
 插件以「一个 npm 包 = 宿主半部 + 浏览器半部」的形式分发。
 
-### 方式 A：图形界面（推荐）
+### 方式 A：从插件市场安装（推荐）
 
-1. 打开 DSH → **设置 → 插件**
-2. 选择安装本地插件，填入本目录的绝对路径（例如 `D:\plugins\dsh-prompt-starlight`）
-3. 安装完成后刷新页面
+DSH 没有官方市场——**"市场"就是一个 `format: 1` 的 JSON 索引，放在任意 https 地址上**。本仓库自带一份，所以你可以把它当成一个只收录本插件的市场：
 
-### 方式 B：把本目录 link 进当前 profile
+1. 侧栏 **Plugins** → **Experimental plugins** 旁的 **More** → 打开 **Custom plugin markets**
+2. 切到 **Discover**，添加索引地址：
+
+   ```text
+   https://cdn.jsdelivr.net/gh/Starlit-Sky-code/dsh-prompt-starlight@main/market/index.json
+   ```
+
+   备用地址（部分网络下 jsDelivr 不可达时用；raw.githubusercontent 在某些地区会被墙）：
+
+   ```text
+   https://raw.githubusercontent.com/Starlit-Sky-code/dsh-prompt-starlight/main/market/index.json
+   ```
+
+3. 列表里点安装。DSH 会把它装进当前 profile，并**钉死到索引里写的那个 40 位 commit**，之后行为可复现。
+
+> 索引本身用官方校验器 `@deepseek-ai/dsh-plugin-market-index` 验过（`npm run market:validate`）。宿主对索引读取有 10 分钟缓存，新版本不是立刻可见。
+
+### 方式 B：直接按 commit 安装
+
+知道自己要哪个提交时，不经过市场更直接：
+
+```powershell
+dsh plugin add "git+https://github.com/Starlit-Sky-code/dsh-prompt-starlight.git#<40位commit>"
+```
+
+### 方式 C：把本目录 link 进当前 profile（本地开发）
 
 ```powershell
 # 1) 让 profile 依赖本目录
@@ -110,6 +133,23 @@ http://127.0.0.1:19387/plugins/dsh-prompt-starlight/client.js
 - `/plugins/dsh-prompt-starlight/client.js` 返回 JS = 浏览器半部被 client-modules 收进启动图了。
 
 两个都通、输入框工具行左侧却没有星星？硬刷新（`Ctrl+Shift+R`）一次。
+
+### 收录状态
+
+| 渠道 | 机制 | 状态 |
+|---|---|---|
+| **本仓库自带索引** | `market/index.json`（format 1，官方校验器通过） | ✅ 可用，地址见上 |
+| **[awesome-dsh-plugin](https://github.com/awesome-dsh-plugin/awesome-dsh-plugin)** | PR 一个 `data/plugins/<owner>__<repo>.yml` | 📝 条目已备好（`market/awesome-entry.yml`），待满足「仓库满 1 天」后提交 |
+| **[dshbase.com](https://dshbase.com/zh/plugins/directory/)** | 按其说明，标注 `dsh-plugin` GitHub topic 即可被发现 | ⏳ 需要给仓库加 topic |
+| **npm** | `npm publish` 后可用 `dsh plugin add dsh-prompt-starlight` | ⏳ 需要 npm 登录后发布 |
+| 其他个人索引（如 Silentforfar 的市场） | 各作者自己的私有索引 | — 不往别人私人索引里塞条目 |
+
+**发新版本时**索引必须同步，否则用户装到的还是旧 commit：
+
+```powershell
+npm run market           # 把 index.json 钉到当前 HEAD 与 package.json 的版本
+npm run market:validate  # 官方校验器验一遍
+```
 
 ---
 
