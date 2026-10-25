@@ -22,6 +22,10 @@ on:
 
 permissions:
   contents: write
+  # npm Trusted Publishing（OIDC 免密钥发布）要的就是这一条：
+  # 工作流向 GitHub 要一个短期 OIDC 令牌，npm CLI 拿它换一次性的发布令牌。
+  # 因此全程不需要任何长期 token / Bypass 2FA 的 Granular Access Token。
+  id-token: write
 
 jobs:
   release:
@@ -131,20 +135,29 @@ jobs:
           git commit -m "chore: 市场索引重新钉到 ${{ steps.version.outputs.tag }}（${GITHUB_SHA:0:7}）"
           git push origin HEAD:main
 
-      # 可选：配置 secret NPM_TOKEN 才会执行。
-      # 账号开了 2FA（tfa=auth-and-writes）时，**必须**用勾了 Bypass 2FA 的
-      # Granular Access Token，否则 npm 会返回 403，而不是提示你输入验证码。
-      - name: 发布到 npm（配置了 NPM_TOKEN 才跑）
-        env:
-          NODE_AUTH_TOKEN: ${{ secrets.NPM_TOKEN }}
-        if: env.NODE_AUTH_TOKEN != ''
+      # npm 发布走 Trusted Publishing（OIDC），不需要任何长期 token。
+      #
+      # 前置（在 npmjs.com 上做一次）：
+      #   账号 → Trusted Publishers（或包设置页）→ Add trusted publisher
+      #     Provider          : GitHub Actions
+      #     Organization/user : Starlit-Sky-code
+      #     Repository        : dsh-prompt-starlight
+      #     Workflow filename : release.yml
+      #     Environment       : 留空
+      #     Allowed actions   : npm publish
+      # 注意：新配置有 2 天有效期，必须在窗口内完成首次成功发布，否则作废需重建。
+      #
+      # 配好后到仓库 Settings → Secrets and variables → Actions → **Variables** 新建
+      #   名称 NPM_PUBLISH，值 true
+      # 这里用 variable 而不是 secret：变量可读、无泄漏风险，也方便随时关掉发布。
+      - name: 发布到 npm（Trusted Publishing，需变量 NPM_PUBLISH=true）
+        if: vars.NPM_PUBLISH == 'true'
         run: |
-          # 兜底：即使 setup-node 没写，也确保 .npmrc 里有认证行
-          if ! grep -q '_authToken' ~/.npmrc 2>/dev/null; then
-            echo "//registry.npmjs.org/:_authToken=\${NODE_AUTH_TOKEN}" >> ~/.npmrc
-          fi
+          # 防止重复发布：版本已在 registry 上就跳过
           if npm view "$(node -p "require('./package.json').name")@${{ steps.version.outputs.version }}" version >/dev/null 2>&1; then
             echo "该版本已在 registry 上，跳过"
             exit 0
           fi
+          # 没有 _authToken 也能发：npm CLI 检测到 GHA 的 OIDC 环境后
+          # 会自动用 id-token 换一次性发布令牌，并附带 provenance 证明
           npm publish --no-audit --no-fund

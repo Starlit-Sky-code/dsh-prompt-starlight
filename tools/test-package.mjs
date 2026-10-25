@@ -300,6 +300,9 @@ check('工作流文件存在且带署名', workflowFiles.length >= 2 && workflow
 check('CI 工作流在 main push 与 PR 上触发', read('.github/workflows/ci.yml').includes('branches: [main]') && read('.github/workflows/ci.yml').includes('pull_request'))
 check('Release 工作流由 v* tag 触发', read('.github/workflows/release.yml').includes("tags: ['v*']"))
 check('Release 工作流会重钉市场索引', read('.github/workflows/release.yml').includes('pin-market.mjs'))
+check('Release 工作流申请了 OIDC 权限（Trusted Publishing 必需）', /^\s{2}id-token:\s*write$/m.test(read('.github/workflows/release.yml')))
+check('Release 工作流不再依赖长期 NPM_TOKEN 发布', !read('.github/workflows/release.yml').includes('secrets.NPM_TOKEN'))
+check('npm 发布由仓库变量 NPM_PUBLISH 控制', read('.github/workflows/release.yml').includes("vars.NPM_PUBLISH == 'true'"))
 check('Release 工作流发布前跑测试', read('.github/workflows/release.yml').includes('test-host.mjs') && read('.github/workflows/release.yml').includes('test-client.mjs'))
 
 check('package.json author 为 Starlit Sky', pkg.author?.name === MARK, JSON.stringify(pkg.author))

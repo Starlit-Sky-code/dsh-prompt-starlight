@@ -9,7 +9,7 @@
 <p align="center">
   <img alt="license AGPL-3.0" src="https://img.shields.io/badge/license-AGPL--3.0-ff9d32" />
   <img alt="version" src="https://img.shields.io/badge/version-0.4.1-4d6bfe" />
-  <img alt="tests" src="https://img.shields.io/badge/tests-306%20passing-2f9e44" />
+  <img alt="tests" src="https://img.shields.io/badge/tests-309%20passing-2f9e44" />
   <img alt="DSH" src="https://img.shields.io/badge/DSH-0.2.0--rc.2-8a8f98" />
 </p>
 
@@ -195,9 +195,38 @@ npm run market           # pin index.json to HEAD + the package.json version
 npm run market:validate  # run the official validator
 ```
 
-### Optional: let CI publish to npm
+### Optional: let CI publish to npm (Trusted Publishing, no token at all)
 
-Add an `NPM_TOKEN` secret under **Settings → Secrets and variables → Actions**. It **must be a Granular Access Token with "Bypass 2FA" enabled**: with `tfa=auth-and-writes`, a plain token gets a 403 at `npm publish` instead of being prompted for a code. Without the secret the publish step skips itself.
+npm's recommended path is **OIDC trusted publishing**, not a long-lived "Bypass 2FA" token — that token is a key that skips the one-time code entirely, so leaking it is far worse than a leaked OTP.
+
+One-time setup:
+
+1. npmjs.com → account → **Trusted Publishers** → **Add trusted publisher** (works before the package is published)
+
+   | Field | Value |
+   |---|---|
+   | Provider | GitHub Actions |
+   | Organization / user | `Starlit-Sky-code` |
+   | Repository | `dsh-prompt-starlight` |
+   | Workflow filename | `release.yml` |
+   | Environment | leave empty |
+   | Allowed actions | `npm publish` |
+
+   > A **new configuration expires in 2 days**: the first successful publish must happen inside that window, otherwise it dies and has to be recreated.
+
+2. Repo **Settings → Secrets and variables → Actions → Variables** → new `NPM_PUBLISH` = `true`
+
+From then on every tag push exchanges the workflow's OIDC token for a short-lived publish token, and public repositories get provenance for free. The workflow only needs:
+
+```yaml
+permissions:
+  contents: write
+  id-token: write     # ← that is all
+```
+
+**After the first successful publish, harden it**: package settings → **Settings → Publishing access** → *Require two-factor authentication and disallow tokens*. No long-lived token can publish the package again; OIDC is the only way in.
+
+> Skipping all of this is fine too: the publish step skips itself and the rest of the release (Release asset + index re-pin) still runs.
 
 ---
 

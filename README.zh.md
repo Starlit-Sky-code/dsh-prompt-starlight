@@ -9,7 +9,7 @@
 <p align="center">
   <img alt="license AGPL-3.0" src="https://img.shields.io/badge/license-AGPL--3.0-ff9d32" />
   <img alt="version" src="https://img.shields.io/badge/version-0.4.1-4d6bfe" />
-  <img alt="tests" src="https://img.shields.io/badge/tests-306%20passing-2f9e44" />
+  <img alt="tests" src="https://img.shields.io/badge/tests-309%20passing-2f9e44" />
   <img alt="DSH" src="https://img.shields.io/badge/DSH-0.2.0--rc.2-8a8f98" />
 </p>
 
@@ -203,9 +203,38 @@ npm run market           # 把 index.json 钉到当前 HEAD 与 package.json 的
 npm run market:validate  # 官方校验器验一遍
 ```
 
-### 可选：让 CI 发 npm
+### 可选：让 CI 发 npm（Trusted Publishing，不用任何 token）
 
-在仓库 **Settings → Secrets and variables → Actions** 加一个 `NPM_TOKEN`。注意它**必须是勾了 Bypass 2FA 的 Granular Access Token**——账号 2FA 模式是 `auth-and-writes` 时，普通 token 会在 `npm publish` 处收到 403，而不是提示输入验证码。不配这个 secret，发布那步会自动跳过。
+npm 官方推荐的做法是 **OIDC 免密钥发布**，而不是建一个「Bypass 2FA」的长期 token——后者等于一把能绕过验证码的钥匙，一旦泄漏后果比一次性验证码严重得多。
+
+一次性配置：
+
+1. npmjs.com → 账号 → **Trusted Publishers** → **Add trusted publisher**（包还没发布也能预配置）
+
+   | 字段 | 值 |
+   |---|---|
+   | Provider | GitHub Actions |
+   | Organization / user | `Starlit-Sky-code` |
+   | Repository | `dsh-prompt-starlight` |
+   | Workflow filename | `release.yml` |
+   | Environment | 留空 |
+   | Allowed actions | `npm publish` |
+
+   > **新配置只有 2 天有效期**：必须在窗口内完成第一次成功发布，否则作废，只能删掉重建。
+
+2. 仓库 **Settings → Secrets and variables → Actions → Variables** → 新建 `NPM_PUBLISH` = `true`
+
+之后每次推 tag，CI 用工作流自带的 OIDC 令牌换一次性发布令牌，公开仓库还会自动生成 provenance 证明。工作流里只需要：
+
+```yaml
+permissions:
+  contents: write
+  id-token: write     # ← 就这一条
+```
+
+**发布成功之后建议再做一步加固**：npm 包设置 → **Settings → Publishing access** → 选 *Require two-factor authentication and disallow tokens*。这样任何长期 token 都无法再发布这个包，只剩 OIDC 一条路。
+
+> 手工作为兜底：不配上面的东西，发布那步会自动跳过，发版流程照常完成（Release + 索引重钉不受影响）。
 
 ---
 
