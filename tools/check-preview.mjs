@@ -13,7 +13,8 @@ const h = fs.readFileSync('tools/preview.html', 'utf8')
 const tests = {
   真实按钮标记: h.includes('data-dsh-starlight="button"'),
   设置页有hero: h.includes('dshsl-hero-badge'),
-  设置页有模型下拉: h.includes('dshsl-select'),
+  设置页有模型选择行: h.includes('dshsl-picker-row'),
+  设置页有规则紧凑标记: h.includes('data-compact'),
   设置页有规则分组: h.includes('dshsl-group-name'),
   设置页有分组网格: h.includes('dshsl-rules-grid'),
   设置页有状态徽标: h.includes('dshsl-pill'),

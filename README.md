@@ -59,6 +59,10 @@ Model list expanded (the same row + chevron as DSH's native picker, no OS dropdo
 
 <img src="docs/screenshots/popover-open.png" width="380" alt="Model list" />
 
+"More" expanded — rule titles only, two columns, custom rules folded one level deeper:
+
+<img src="docs/screenshots/popover-more.png" width="380" alt="More section" />
+
 Settings page (Settings → Starlight) — model first, then the two sliders, the rest collapsed:
 
 <img src="docs/screenshots/settings.png" width="620" alt="Starlight settings page" />

@@ -197,6 +197,7 @@ async function renderReal(locale) {
   })
   let popHtml = ''
   let popHtmlOpen = ''
+  let popHtmlMore = ''
   const panel = dom.window.document.querySelector('.dshsl-panel')
   if (panel !== null) {
     panel.removeAttribute('style')
@@ -213,6 +214,22 @@ async function renderReal(locale) {
         await new Promise((resolve) => setTimeout(resolve, 220))
       })
       popHtmlOpen = panel.outerHTML
+    }
+    // 收起模型列表、展开「更多设置」，拍规则区
+    if (row !== null) {
+      await act(async () => {
+        row.dispatchEvent(new dom.window.MouseEvent('click', { bubbles: true }))
+      })
+    }
+    const moreHead = panel.querySelector('.dshsl-more-head')
+    if (moreHead !== null) {
+      await act(async () => {
+        moreHead.dispatchEvent(new dom.window.MouseEvent('click', { bubbles: true }))
+      })
+      await act(async () => {
+        await new Promise((resolve) => setTimeout(resolve, 220))
+      })
+      popHtmlMore = panel.outerHTML
     }
   }
   await act(async () => {
@@ -248,7 +265,7 @@ async function renderReal(locale) {
   const styleTag = dom.window.document.head.querySelector('style[data-plugin-css]')
   const css = styleTag === null ? '' : styleTag.textContent
   dom.window.close()
-  return { css, popHtml, popHtmlOpen, pageHtml }
+  return { css, popHtml, popHtmlOpen, popHtmlMore, pageHtml }
 }
 
 /** 把图标换成 data URI，file:// 页面才不会破图。 */
@@ -319,6 +336,14 @@ for (const locale of ['zh', 'en']) {
     written.push(openPng)
   }
 
+  if (rendered.popHtmlMore !== '') {
+    const morePage = path.join(work, `popover-more${suffix}.html`)
+    fs.writeFileSync(morePage, mkPage(rendered.popHtmlMore, 400, rendered.css, locale === 'zh' ? 'zh-CN' : 'en'), 'utf8')
+    const morePng = path.join(outDir, `popover-more${suffix}.png`)
+    shot(browser, morePage, morePng, 440, 1000)
+    written.push(morePng)
+  }
+
   const pagePage = path.join(work, `settings${suffix}.html`)
   fs.writeFileSync(
     pagePage,
@@ -334,5 +359,13 @@ for (const locale of ['zh', 'en']) {
 
 for (const file of written) {
   console.log(`  ${path.basename(file).padEnd(16)} ${(fs.statSync(file).size / 1024).toFixed(0)} KB`)
+}
+
+// 截图随包发布（README 要在 npm 页面上渲染它们），不压的话光图就 1 MB。
+// 界面截图是少色内容，量化到 256 色肉眼无差别、体积只剩四成。
+try {
+  execFileSync('python', [path.join(root, 'tools', 'optimize-shots.py')], { stdio: 'inherit' })
+} catch (error) {
+  console.log('  跳过量化：python 或 Pillow 不可用')
 }
 console.log('已生成 docs/screenshots/（zh 与 en 各一套）')

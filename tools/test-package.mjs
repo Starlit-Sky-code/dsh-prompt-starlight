@@ -226,6 +226,21 @@ check('代码里不再有 select 元素', !client.includes("className: 'dshsl-se
 check('浮层有弹出 / 收回动画', client.includes('dshsl-pop-in') && client.includes('dshsl-pop-out'))
 check('收回动画结束后才卸载', client.includes('CLOSE_ANIMATION_MS') && client.includes('data-closing'))
 check('减少动效时关闭动画', client.includes('prefers-reduced-motion') && client.includes('.dshsl-picker-list{animation:none}'))
+
+// 规则列表的列数必须由容器决定，不能按视口宽度（曾经用 @media 导致浮层被挤成两列）
+check(
+  '规则列数按容器决定（不再有按视口的 media 查询）',
+  client.includes("'data-columns': props.columns === 2") && !client.includes('@media (min-width:560px){.dshsl-rules-grid'),
+)
+check('浮层里规则用紧凑形态（只留标题）', client.includes('compact: true') && client.includes('data-compact'))
+check('浮层里的自定义规则是二级折叠', client.includes("title: t('自定义规则', 'Custom rules')"))
+check(
+  '截图有量化步骤（控制包体）',
+  fs.existsSync('tools/optimize-shots.py') && fs.readFileSync('tools/make-shots.mjs', 'utf8').includes('optimize-shots.py'),
+)
+const shots = fs.existsSync('docs/screenshots') ? fs.readdirSync('docs/screenshots').filter((n) => n.endsWith('.png')) : []
+check('截图齐全（收起 / 模型列表 / 更多设置 × 中英）', shots.length >= 6, shots.join(', '))
+check('README 引用了展开态截图', read('README.zh.md').includes('popover-more.zh.png') || read('README.zh.md').includes('popover-open.zh.png'))
 check('拉取模型目录接口', client.includes("requestJson('/models'"))
 check('规则按分组渲染', client.includes('dshsl-rules-grid') && client.includes('ruleGroups'))
 check('尊重 prefers-reduced-motion', client.includes('prefers-reduced-motion: reduce'))

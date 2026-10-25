@@ -11,10 +11,14 @@ Chinese version: [CHANGELOG.zh-CN.md](CHANGELOG.zh-CN.md).
 - **The model switcher follows DSH's native pattern**: a row with the label on the left, the current value on the right and a chevron, expanding into a list below, replaces the native `<select>`. On dark themes the OS dropdown pops up as a white sheet with its own font and colours; the list, its hover state, the check mark and the "re-read catalog" entry are now drawn by the plugin.
 - **The popover animates in and out**: it scales and fades in from the button's side (bottom right), and on close it plays the exit animation before unmounting. Everything is disabled under `prefers-reduced-motion`.
 - The settings page's model row drops the duplicated heading and left-aligns the value, matching the other native rows.
+- **The popover's "More" section is far more compact**: rules show their title only (the note becomes a hover tooltip), two columns, group notes dropped, and custom rules fold into a nested section. The panel cap went from 560 to 620px, so the footer stays put.
+- Screenshots are now quantized to a 256-colour palette: `tools/make-shots.mjs` calls `tools/optimize-shots.py`. Eight images 1.08 MB → 0.43 MB, and the package is back to 0.83 MB.
 
 ### Fixed
 
 - The model note was clipped by the picker's rounded container.
+- **The rules grid decided its columns from the viewport width** (`@media (min-width:560px)`), so the 360px-wide popover was squeezed into two columns on a large screen. It now follows the container: two compact columns in the popover, two columns with notes on the settings page.
+- The final shortcut hint in the expanded popover was cut in half by the panel edge; it has moved out (the settings page and README both mention it).
 
 ## [0.4.1] - 2026-10-25
 

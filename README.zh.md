@@ -59,6 +59,10 @@ DSH 输入框工具行**左侧**的**圆形四角星**按钮，自带一圈描�
 
 <img src="docs/screenshots/popover-open.zh.png" width="380" alt="模型列表" />
 
+「更多设置」展开——规则只留标题、两列排布，自定义规则再收一层：
+
+<img src="docs/screenshots/popover-more.zh.png" width="380" alt="更多设置" />
+
 设置页（设置 → 星芒提示词）——模型在最前，然后是两根滑块，其余折叠：
 
 <img src="docs/screenshots/settings.zh.png" width="620" alt="星芒设置页" />

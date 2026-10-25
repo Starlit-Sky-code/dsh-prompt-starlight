@@ -1,0 +1,36 @@
+- generic [ref=f2e3]:
+  - region "Site notifications" [ref=f2e4]:
+    - generic [ref=f2e8]:
+      - generic [ref=f2e9]: ⚠️
+      - alert [ref=f2e11]:
+        - text: npm tokens that bypass 2FA are being restricted — account changes (Aug 2026) and direct publishing (Jan 2027).
+        - link "Learn how to prepare for the npm bypass 2FA token deprecation" [ref=f2e12] [cursor=pointer]:
+          - /url: https://github.blog/changelog/2026-07-08-npm-install-time-security-and-gat-bypass2fa-deprecation/
+          - text: Learn how to prepare →
+      - button "Close notification" [ref=f2e13] [cursor=pointer]: ×
+  - main [ref=f2e15]:
+    - generic [ref=f2e16]:
+      - link "Npm" [ref=f2e17] [cursor=pointer]:
+        - /url: /
+      - button "Light mode — click for dark" [ref=f2e22] [cursor=pointer]
+    - generic [ref=f2e27]:
+      - generic [ref=f2e28]:
+        - button "Toggle between showing and hiding a shade over a wombat's head" [ref=f2e30] [cursor=pointer]
+        - button "Make the animated wombat visibly giggle" [ref=f2e35]
+      - generic [ref=f2e38]:
+        - heading "Sign In" [level=1] [ref=f2e39]
+        - generic [ref=f2e40]:
+          - generic [ref=f2e41]: Username
+          - textbox "Username" [ref=f2e43]:
+            - /placeholder: ""
+        - link "Forgot password?" [ref=f2e45] [cursor=pointer]:
+          - /url: /forgot
+        - generic [ref=f2e46]:
+          - generic [ref=f2e47]: Password
+          - generic [ref=f2e49]:
+            - textbox "Password" [ref=f2e50]:
+              - /placeholder: ""
+            - button "Show password" [ref=f2e51] [cursor=pointer]: Show
+        - button "Sign In" [disabled] [ref=f2e53]
+      - link "Create Account" [ref=f2e54] [cursor=pointer]:
+        - /url: /signup
