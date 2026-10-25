@@ -286,6 +286,12 @@ check('node_modules 没有被 git 跟踪', gitTracked('node_modules') === '', gi
 // 源头上防住：.gitignore 必须忽略 node_modules，否则一次 git add -A 就会把它整包提交
 const gitignore = exists('.gitignore') ? read('.gitignore') : ''
 check(
+  '.gitignore 忽略根目录临时产物',
+  gitignore.split('\n').some((line) => line.trim() === '/*.png') &&
+    gitignore.split('\n').some((line) => line.trim() === '.playwright-mcp/'),
+  JSON.stringify(gitignore.split('\n').filter((line) => line.startsWith('/') || line.includes('playwright'))),
+)
+check(
   '.gitignore 忽略根 node_modules',
   gitignore.split('\n').some((line) => line.trim() === 'node_modules/' || line.trim() === 'node_modules'),
   JSON.stringify(gitignore.split('\n').filter((line) => line.includes('node_modules'))),

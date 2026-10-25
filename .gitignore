@@ -15,3 +15,7 @@ Thumbs.db
 *.log
 # 根依赖（只有官方市场索引校验器）不进仓库
 node_modules/
+# 根目录的临时产物：调试截图与工具会话转储，都不该进仓库
+# （真正的图片资产在 assets/ 与 docs/screenshots/ 下）
+/*.png
+.playwright-mcp/
