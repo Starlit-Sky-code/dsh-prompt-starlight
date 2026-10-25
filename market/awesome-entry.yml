@@ -13,9 +13,9 @@
 #   - 仓库根有 cordis.patch.yml           → 是
 #   - 有真实可用的代码                    → 是
 #
-# 可选但推荐：发 npm 或挂 GitHub Release tarball，安装时免「构建授权」步骤。
-# 若挂 tarball，请让资产名不带版本号，或钉住 release tag：
-#   tarball: https://github.com/Starlit-Sky-code/dsh-prompt-starlight/releases/latest/download/dsh-prompt-starlight.tgz
+# 已挂 GitHub Release tarball（资产名带版本号，所以钉住 v0.4.0 这个 tag；
+# 这样安装时免掉 pnpm 的构建授权步骤，也不必等 npm 解冻）：
+#   https://github.com/Starlit-Sky-code/dsh-prompt-starlight/releases/download/v0.4.0/dsh-prompt-starlight-0.4.0.tgz
 
 url: https://github.com/Starlit-Sky-code/dsh-prompt-starlight
 name: Starlit-Sky-code/dsh-prompt-starlight
@@ -24,3 +24,4 @@ description:
   en: Adds a star button to the left of the composer that rewrites the draft into a more structured prompt, with two sliders for rewrite strength and detail, a model switcher, and 11 built-in rules that can be toggled.
   zh: 在输入框工具行左侧加一个四角星按钮，一键把草稿改写成更有结构的提示词；提供强度与详细度两根滑块、模型切换，以及 11 条可开关的内置规则。
 icon: https://raw.githubusercontent.com/Starlit-Sky-code/dsh-prompt-starlight/main/assets/icon-180.png
+tarball: https://github.com/Starlit-Sky-code/dsh-prompt-starlight/releases/download/v0.4.0/dsh-prompt-starlight-0.4.0.tgz

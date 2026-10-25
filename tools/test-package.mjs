@@ -200,6 +200,10 @@ check('awesome 条目含仓库 url', awesomeEntry.includes('url: https://github.
 check('awesome 条目含 category', /^category: \w+$/m.test(awesomeEntry))
 check('awesome 条目含英文描述（以句号结尾）', /^\s{2}en: .*\.$/m.test(awesomeEntry))
 check('awesome 条目声明了 dsh.bundle 前置条件的备注', awesomeEntry.includes('dsh.bundle.patch'))
+check(
+  'awesome 条目挂了 Release tarball（免构建授权）',
+  /^tarball: https:\/\/github\.com\/Starlit-Sky-code\/dsh-prompt-starlight\/releases\/download\/v[0-9.]+\//m.test(awesomeEntry),
+)
 
 console.log('\n[8] 署名与版权')
 

@@ -105,7 +105,18 @@ DSH ships no official market — **a "market" is a `format: 1` JSON index hosted
 dsh plugin add "git+https://github.com/Starlit-Sky-code/dsh-prompt-starlight.git#<40-char-commit>"
 ```
 
-### C. Link this directory into the current profile (local development)
+### C. Install the prebuilt tarball from a GitHub Release
+
+Every version ships a packed tgz, so installing needs neither a local pnpm build nor a build-authorisation prompt:
+
+```powershell
+dsh plugin add "https://github.com/Starlit-Sky-code/dsh-prompt-starlight/releases/download/v0.4.0/dsh-prompt-starlight-0.4.0.tgz"
+```
+
+> The asset name carries the version, so the URL pins the `v0.4.0` tag; bump both when you upgrade.
+> Caveat: the download 302s to GitHub's release CDN (`objects.githubusercontent.com` and friends), which is frequently unreachable on mainland China networks — use option A (the jsDelivr index) or D in that case.
+
+### D. Link this directory into the current profile (local development)
 
 ```powershell
 $profile = "$env:DSH_HOME\profiles\desktop"
@@ -137,7 +148,7 @@ JSON with `providers` = host half alive. JavaScript = the browser half made it i
 | **Index in this repository** | `market/index.json` (format 1, official validator passes) | ✅ live, URL above |
 | **[awesome-dsh-plugin](https://github.com/awesome-dsh-plugin/awesome-dsh-plugin)** | one PR adding `data/plugins/<owner>__<repo>.yml` | 📝 entry ready in `market/awesome-entry.yml`, pending the "repo at least 1 day old" gate |
 | **[dshbase.com](https://dshbase.com/plugins/directory/)** | per their docs, adding the `dsh-plugin` GitHub topic is what makes a repo discoverable | ⏳ topic still to add |
-| **npm** | `npm publish`, then `dsh plugin add dsh-prompt-starlight` | ⏳ needs an npm login |
+| **npm** | `npm publish`, then `dsh plugin add dsh-prompt-starlight` | ⚠️ package is ready, but the `starlit_sky` npm account is **temporarily suspended** (recent security-sensitive action); publishing is refused with 403 until it lifts |
 | Personal indexes (e.g. Silentforfar's market) | each author's private index | — not something to push an entry into |
 
 ### Publishing to npm (optional)

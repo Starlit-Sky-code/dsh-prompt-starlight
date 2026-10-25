@@ -108,7 +108,18 @@ DSH 没有官方市场——**"市场"就是一个 `format: 1` 的 JSON 索引�
 dsh plugin add "git+https://github.com/Starlit-Sky-code/dsh-prompt-starlight.git#<40位commit>"
 ```
 
-### 方式 C：把本目录 link 进当前 profile（本地开发）
+### 方式 C：从 GitHub Release 装 tarball（免构建授权）
+
+每个版本都挂了一个预打包的 tgz，安装时不需要 pnpm 现场构建、也不会弹「构建授权」：
+
+```powershell
+dsh plugin add "https://github.com/Starlit-Sky-code/dsh-prompt-starlight/releases/download/v0.4.0/dsh-prompt-starlight-0.4.0.tgz"
+```
+
+> 资产名带版本号，所以 URL 钉住 `v0.4.0`。升级时改 URL 里的 tag 与文件名两处。
+> 注意：下载会 302 到 GitHub 的 release CDN（`objects.githubusercontent.com` 一类主机），**国内网络下这个域名很可能不通**——那种情况下请走方式 A（jsDelivr 索引）或方式 D。
+
+### 方式 D：把本目录 link 进当前 profile（本地开发）
 
 ```powershell
 # 1) 让 profile 依赖本目录
@@ -145,9 +156,9 @@ http://127.0.0.1:19387/plugins/dsh-prompt-starlight/client.js
 | 渠道 | 机制 | 状态 |
 |---|---|---|
 | **本仓库自带索引** | `market/index.json`（format 1，官方校验器通过） | ✅ 可用，地址见上 |
-| **[awesome-dsh-plugin](https://github.com/awesome-dsh-plugin/awesome-dsh-plugin)** | PR 一个 `data/plugins/<owner>__<repo>.yml` | 📝 条目已备好（`market/awesome-entry.yml`），待满足「仓库满 1 天」后提交 |
+| **[awesome-dsh-plugin](https://github.com/awesome-dsh-plugin/awesome-dsh-plugin)** | PR 一个 `data/plugins/<owner>__<repo>.yml` | 📝 条目已备好（`market/awesome-entry.yml`，含 `tarball:`），待满足「仓库满 1 天」后提交 |
 | **[dshbase.com](https://dshbase.com/zh/plugins/directory/)** | 按其说明，标注 `dsh-plugin` GitHub topic 即可被发现 | ⏳ 需要给仓库加 topic |
-| **npm** | `npm publish` 后可用 `dsh plugin add dsh-prompt-starlight` | ⏳ 需要 npm 登录后发布 |
+| **npm** | `npm publish` 后可用 `dsh plugin add dsh-prompt-starlight` | ⚠️ 包已就绪，但 npm 账号 `starlit_sky` 处于**临时冻结**（最近有安全敏感操作），发布被 403 拦下；解冻后一条命令即可 |
 | 其他个人索引（如 Silentforfar 的市场） | 各作者自己的私有索引 | — 不往别人私人索引里塞条目 |
 
 ### 发布到 npm（可选）
