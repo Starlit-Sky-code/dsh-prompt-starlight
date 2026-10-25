@@ -1,4 +1,17 @@
-# 星芒 · 提示词一键优化（dsh-prompt-starlight）
+<p align="center">
+  <img src="assets/icon.png" width="128" alt="星芒 · dsh-prompt-starlight" />
+</p>
+
+<h1 align="center">星芒 · 提示词一键优化</h1>
+
+<p align="center"><sub>DSH 插件 · <strong>by Starlit Sky</strong></sub></p>
+
+<p align="center">
+  <img alt="license AGPL-3.0" src="https://img.shields.io/badge/license-AGPL--3.0-ff9d32" />
+  <img alt="version" src="https://img.shields.io/badge/version-0.3.0-4d6bfe" />
+  <img alt="tests" src="https://img.shields.io/badge/tests-217%20passing-2f9e44" />
+  <img alt="DSH" src="https://img.shields.io/badge/DSH-0.2.0--rc.2-8a8f98" />
+</p>
 
 DSH 输入框工具行**左侧**的**圆形四角星**按钮（自带一圈描边光晕，从工具行里浮出来）：点一下，把草稿改写成一份更清晰、更完整、更可执行的提示词。
 优化规则、风格、语言、改写强度**全部可自定义**——内置规则可逐条开关，也可以追加自己的规则，并且有**独立设置页**（设置 → 星芒提示词）。
@@ -297,10 +310,14 @@ node tools/asar-list.mjs "$env:DSH_HOME\resources\app.asar" list "dsh-client-ui-
 
 ---
 
-## 许可
+## 署名与许可
 
-[GNU Affero 通用公共许可证 v3.0](LICENSE)（AGPL-3.0）。
+**© 2026 Starlit Sky · AGPL-3.0** — 详见 [NOTICE](NOTICE) 与 [LICENSE](LICENSE)。
 
-强 copyleft，且带「网络条款」：如果你把修改版作为网络服务提供给别人用，必须向他们提供对应源码。分发、二次开发都必须继续用 AGPL-3.0 并保留本声明。
+- 每个源文件顶部都有统一署名头，由 `node tools/stamp-signature.mjs` 生成、`--check` 机械校验，删掉会被测试抓出来。
+- `lib/client.js` 原样下发到浏览器，所以署名头与运行时水印会直接出现在开发者工具里。
+- 宿主启动日志也会打印同一行署名（`STARLIGHT_QUIET=1` 可关）。
 
-想以宽松许可（比如嵌进闭源产品）使用，请在仓库开 issue 谈——换许可证是版权人的决定，绕不过去。
+强 copyleft，且带「网络条款」：如果你把修改版作为网络服务提供给别人用，必须向他们提供对应源码。分发、二次开发都必须继续用 AGPL-3.0，并保留署名头与 LICENSE。
+
+想以宽松许可（比如嵌进闭源产品或托管服务）使用，请通过 [Issue](https://github.com/Starlit-Sky-code/dsh-prompt-starlight/issues) 联系版权人谈商业授权——换许可证是版权人的决定，绕不过去。

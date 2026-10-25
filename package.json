@@ -8,7 +8,8 @@
     "deepseek-harness",
     "prompt",
     "prompt-engineering",
-    "composer"
+    "composer",
+    "starlit-sky"
   ],
   "type": "module",
   "main": "lib/index.js",
@@ -26,7 +27,11 @@
     "cordis.patch.yml",
     "README.md",
     "README.zh.md",
-    "LICENSE"
+    "LICENSE",
+    "NOTICE",
+    "assets/icon.png",
+    "assets/icon-640.png",
+    "assets/social-preview.png"
   ],
   "scripts": {
     "test": "node tools/test-package.mjs && node tools/test-host.mjs && node tools/test-client.mjs",
@@ -34,6 +39,9 @@
     "test:host": "node tools/test-host.mjs",
     "test:client": "node tools/test-client.mjs",
     "preview": "node tools/make-preview.mjs && node tools/check-preview.mjs",
+    "assets": "python tools/make-assets.py",
+    "sign": "node tools/stamp-signature.mjs",
+    "sign:check": "node tools/stamp-signature.mjs --check",
     "install:profile": "node tools/install-profile.mjs"
   },
   "dsh": {
@@ -44,6 +52,18 @@
       "platform": "web"
     }
   },
+  "author": {
+    "name": "Starlit Sky",
+    "url": "https://github.com/Starlit-Sky-code"
+  },
+  "repository": {
+    "type": "git",
+    "url": "git+https://github.com/Starlit-Sky-code/dsh-prompt-starlight.git"
+  },
+  "bugs": {
+    "url": "https://github.com/Starlit-Sky-code/dsh-prompt-starlight/issues"
+  },
+  "homepage": "https://github.com/Starlit-Sky-code/dsh-prompt-starlight#readme",
   "peerDependencies": {
     "@deepseek-ai/cordis": "~4.0.4"
   },

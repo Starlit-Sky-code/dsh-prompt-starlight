@@ -1,3 +1,12 @@
+/*!
+ * 星芒 · 提示词一键优化（dsh-prompt-starlight）
+ * Copyright (c) 2026 Starlit Sky · SPDX-License-Identifier: AGPL-3.0-only
+ * https://github.com/Starlit-Sky-code/dsh-prompt-starlight
+ *
+ * 这是 dsh-prompt-starlight 的一部分。保留本署名是使用条件：
+ * 分发、修改或作为网络服务提供时必须附上完整对应源码（AGPL-3.0 第 4、5、13 条）。
+ * 商业授权请联系作者。
+ */
 /**
  * Client 半部集成测试：用 jsdom + 真实 React 18 加载 lib/client.js，
  * 验证模块加载器契约、两条槽位注册（composer 按钮 + 设置页）、

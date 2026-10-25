@@ -3,6 +3,9 @@ tools/fixture/node_modules/
 tools/fixture/.npm-cache/
 tools/fixture/package-lock.json
 
+# 临时工作区：asar 解包、Edge 截图用的 profile、构建中间产物
+.tmp/
+
 # DSH 的 asar 解包产物（排查用，不进仓库）
 tools/extract/
 

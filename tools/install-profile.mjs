@@ -1,3 +1,12 @@
+/*!
+ * 星芒 · 提示词一键优化（dsh-prompt-starlight）
+ * Copyright (c) 2026 Starlit Sky · SPDX-License-Identifier: AGPL-3.0-only
+ * https://github.com/Starlit-Sky-code/dsh-prompt-starlight
+ *
+ * 这是 dsh-prompt-starlight 的一部分。保留本署名是使用条件：
+ * 分发、修改或作为网络服务提供时必须附上完整对应源码（AGPL-3.0 第 4、5、13 条）。
+ * 商业授权请联系作者。
+ */
 /**
  * 把本插件 link 进指定的 DSH profile（改 package.json + 装依赖）。
  * 幂等：重复执行只会有一次改动。rollback 走 --remove。

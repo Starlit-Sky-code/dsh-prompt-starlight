@@ -1,3 +1,12 @@
+/*!
+ * 星芒 · 提示词一键优化（dsh-prompt-starlight）
+ * Copyright (c) 2026 Starlit Sky · SPDX-License-Identifier: AGPL-3.0-only
+ * https://github.com/Starlit-Sky-code/dsh-prompt-starlight
+ *
+ * 这是 dsh-prompt-starlight 的一部分。保留本署名是使用条件：
+ * 分发、修改或作为网络服务提供时必须附上完整对应源码（AGPL-3.0 第 4、5、13 条）。
+ * 商业授权请联系作者。
+ */
 /**
  * 包形状自检：确认 package.json 的 dsh / exports / files 声明与磁盘上的文件一致。
  *
@@ -100,10 +109,58 @@ check('骨架屏占位', client.includes('function Skeleton') && client.includes
 
 console.log('\n[7] 文件清单')
 
-for (const relative of ['lib/index.js', 'lib/client.js', 'lib/rules.js', 'lib/config.js', 'README.md', 'README.zh.md']) {
+for (const relative of [
+  'lib/index.js',
+  'lib/client.js',
+  'lib/rules.js',
+  'lib/config.js',
+  'README.md',
+  'README.zh.md',
+  'LICENSE',
+  'NOTICE',
+  'assets/icon.png',
+  'assets/icon-640.png',
+  'assets/social-preview.png',
+  'design/settings-variants.html',
+]) {
   check(`存在 ${relative}`, exists(relative))
 }
 check('没有把 node_modules 打进包', !exists('node_modules'))
+
+console.log('\n[8] 署名与版权')
+
+const MARK = 'Starlit Sky'
+
+// 所有需要署名的源文件：lib/*.js、tools/*.mjs、tools/*.py、cordis.patch.yml、design/*.html
+const signedFiles = [
+  ...fs.readdirSync(path.join(root, 'lib')).filter((n) => n.endsWith('.js')).map((n) => `lib/${n}`),
+  ...fs.readdirSync(path.join(root, 'tools')).filter((n) => n.endsWith('.mjs') || n.endsWith('.py')).map((n) => `tools/${n}`),
+  'cordis.patch.yml',
+  'design/settings-variants.html',
+]
+
+const unsigned = signedFiles.filter((relative) => !read(relative).slice(0, 400).includes(MARK))
+check(`全部 ${signedFiles.length} 个源文件都带署名头`, unsigned.length === 0, unsigned.join(', '))
+
+const clientHead = read('lib/client.js').slice(0, 400)
+check('客户端半部署名用 /*! 形式（可被压缩器保留）', clientHead.startsWith('/*!'))
+check('署名含 SPDX 许可标识', clientHead.includes('SPDX-License-Identifier: AGPL-3.0-only'))
+check('署名含仓库地址', clientHead.includes('github.com/Starlit-Sky-code/dsh-prompt-starlight'))
+check('客户端有运行时署名水印', client.includes('__starlightSigned'))
+check('宿主有启动署名日志', read('lib/index.js').includes('[dsh-prompt-starlight] 星芒 · Starlit Sky'))
+
+check('package.json author 为 Starlit Sky', pkg.author?.name === MARK, JSON.stringify(pkg.author))
+check('package.json license 为 AGPL-3.0-only', pkg.license === 'AGPL-3.0-only', pkg.license)
+check(
+  'package.json repository 指向正确仓库',
+  String(pkg.repository?.url || '').includes('Starlit-Sky-code/dsh-prompt-starlight'),
+  String(pkg.repository?.url || ''),
+)
+check('NOTICE 提到版权人', read('NOTICE').includes(MARK))
+check('NOTICE 说明 AGPL 网络条款', read('NOTICE').includes('第 13 条'))
+check('LICENSE 是 AGPL 原文', read('LICENSE').startsWith('                    GNU AFFERO GENERAL PUBLIC LICENSE'))
+check('README 引用图标', read('README.md').includes('assets/icon.png') && read('README.zh.md').includes('assets/icon.png'))
+check('README 标注 by Starlit Sky', read('README.md').includes(MARK) && read('README.zh.md').includes(MARK))
 
 console.log(`\n结果：${passes} 通过 / ${failures} 失败`)
 process.exit(failures === 0 ? 0 : 1)
