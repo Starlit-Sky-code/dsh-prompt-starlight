@@ -77,17 +77,23 @@ One npm package = one host half + one browser half.
 DSH ships no official market — **a "market" is a `format: 1` JSON index hosted at any https URL**. This repository carries one, so you can treat it as a market listing just this plugin:
 
 1. Sidebar **Plugins** → **More** next to **Experimental plugins** → enable **Custom plugin markets**
-2. Open **Discover** and add the index URL:
+2. Open **Discover** and add the index URL (**prefer the fastly host**):
 
    ```text
-   https://cdn.jsdelivr.net/gh/Starlit-Sky-code/dsh-prompt-starlight@main/market/index.json
+   https://fastly.jsdelivr.net/gh/Starlit-Sky-code/dsh-prompt-starlight@main/market/index.json
    ```
 
-   Fallback (when jsDelivr is unreachable):
+   jsDelivr's edge hosts differ a lot in reachability, especially on mainland China networks. Measured here:
 
-   ```text
-   https://raw.githubusercontent.com/Starlit-Sky-code/dsh-prompt-starlight/main/market/index.json
-   ```
+   | Index URL | Measured |
+   |---|---|
+   | `https://fastly.jsdelivr.net/gh/Starlit-Sky-code/dsh-prompt-starlight@main/market/index.json` | 本次实测可达（1.4s） |
+   | `https://gcore.jsdelivr.net/gh/Starlit-Sky-code/dsh-prompt-starlight@main/market/index.json` | 本次实测可达（0.9s） |
+   | `https://testingcf.jsdelivr.net/gh/Starlit-Sky-code/dsh-prompt-starlight@main/market/index.json` | 本次实测可达（1.1s） |
+   | `https://cdn.jsdelivr.net/gh/Starlit-Sky-code/dsh-prompt-starlight@main/market/index.json` | 官方 CDN 域名，本网络下 SSL 失败 |
+   | `https://raw.githubusercontent.com/Starlit-Sky-code/dsh-prompt-starlight/main/market/index.json` | unreachable on this network |
+
+   > Switching hosts is just a domain swap — the path is identical. Avoid `github.com/.../raw/...`: the host refuses redirects and that URL 302s to raw.githubusercontent.
 
 3. Install from the list. DSH installs it into the current profile **pinned to the exact 40-character commit** in the index, so the result is reproducible.
 

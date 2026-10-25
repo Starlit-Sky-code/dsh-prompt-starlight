@@ -78,17 +78,23 @@ DSH 输入框工具行**左侧**的**圆形四角星**按钮（自带一圈描�
 DSH 没有官方市场——**"市场"就是一个 `format: 1` 的 JSON 索引，放在任意 https 地址上**。本仓库自带一份，所以你可以把它当成一个只收录本插件的市场：
 
 1. 侧栏 **Plugins** → **Experimental plugins** 旁的 **More** → 打开 **Custom plugin markets**
-2. 切到 **Discover**，添加索引地址：
+2. 切到 **Discover**，添加索引地址（**优先用 fastly 这个**）：
 
    ```text
-   https://cdn.jsdelivr.net/gh/Starlit-Sky-code/dsh-prompt-starlight@main/market/index.json
+   https://fastly.jsdelivr.net/gh/Starlit-Sky-code/dsh-prompt-starlight@main/market/index.json
    ```
 
-   备用地址（部分网络下 jsDelivr 不可达时用；raw.githubusercontent 在某些地区会被墙）：
+   国内网络下 jsDelivr 各节点可达性差异很大，**实测只保留能用的**：
 
-   ```text
-   https://raw.githubusercontent.com/Starlit-Sky-code/dsh-prompt-starlight/main/market/index.json
-   ```
+   | 索引地址 | 实测 |
+   |---|---|
+   | `https://fastly.jsdelivr.net/gh/Starlit-Sky-code/dsh-prompt-starlight@main/market/index.json` | 本次实测可达（1.4s） |
+   | `https://gcore.jsdelivr.net/gh/Starlit-Sky-code/dsh-prompt-starlight@main/market/index.json` | 本次实测可达（0.9s） |
+   | `https://testingcf.jsdelivr.net/gh/Starlit-Sky-code/dsh-prompt-starlight@main/market/index.json` | 本次实测可达（1.1s） |
+   | `https://cdn.jsdelivr.net/gh/Starlit-Sky-code/dsh-prompt-starlight@main/market/index.json` | 官方 CDN 域名，本网络下 SSL 失败 |
+   | `https://raw.githubusercontent.com/Starlit-Sky-code/dsh-prompt-starlight/main/market/index.json` | 本网络下不通（部分运营商屏蔽） |
+
+   > 换节点只需换域名，路径完全一样。DSH 拒绝索引读取时的重定向，所以别用 `github.com/.../raw/...`（它 302 到 raw.githubusercontent）。
 
 3. 列表里点安装。DSH 会把它装进当前 profile，并**钉死到索引里写的那个 40 位 commit**，之后行为可复现。
 
