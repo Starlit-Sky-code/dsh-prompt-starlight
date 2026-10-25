@@ -16,6 +16,10 @@ Chinese version: [CHANGELOG.zh-CN.md](CHANGELOG.zh-CN.md).
 - **The popover's "More" section is far more compact**: rules show their title only (the note becomes a hover tooltip), two columns, group notes dropped, and custom rules fold into a nested section. The panel cap went from 560 to 620px, so the footer stays put.
 - Screenshots are now quantized to a 256-colour palette: `tools/make-shots.mjs` calls `tools/optimize-shots.py`. Eight images 1.08 MB → 0.43 MB, and the package is back to 0.83 MB.
 
+- **A third settings tab, "Plugin market"** (read-only): point it at any format 1 index over https — it defaults to our own index — and it lists each plugin's title, category, version and description, folding the catalog's declared version into a paste-ready install spec (`git+https…#commit` or `name@version`) with one-click copy. The tab loads on open; there is no button to press first.
+  - Still read-only: it installs nothing and writes no files; the footer just says the market is a read-only view.
+  - Served through a host proxy, `GET /dsh-starlight/market`: it accepts only credential-free https URLs without query or fragment, refuses redirects, times out at 10s, caps at 2 MiB, checks the format and whitelists fields; the same index is cached for 60s.
+
 ### Fixed
 
 - The model note was clipped by the picker's rounded container.

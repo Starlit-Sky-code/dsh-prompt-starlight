@@ -68,6 +68,10 @@ DSH 输入框工具行**左侧**的**圆形四角星**按钮，自带一圈描�
 
 <img src="docs/screenshots/settings-dialog.zh.png" width="620" alt="设置窗口" />
 
+设置页的「插件市场」标签页（只读浏览 format 1 索引，安装参数一键复制）：
+
+<img src="docs/screenshots/settings-plugins.zh.png" width="620" alt="插件市场" />
+
 设置页（设置 → 星芒提示词）——模型在最前，然后是两根滑块，其余折叠：
 
 <img src="docs/screenshots/settings.zh.png" width="620" alt="星芒设置页" />

@@ -150,7 +150,7 @@ async function call({ kind = 'exact', path: routePath, ...requestInit }) {
 console.log('\n[1] 插件形状')
 const ctx = boot()
 check('name 为 dsh-prompt-starlight', plugin.name === 'dsh-prompt-starlight', plugin.name)
-check('注册了 8 条路由', routes.length === 8, String(routes.length))
+check('注册了 9 条路由', routes.length === 9, String(routes.length))
 check(
   '全部为 exact 路由且前缀正确',
   routes.every((route) => route.kind === 'exact' && route.path.startsWith('/dsh-starlight/')),
@@ -169,6 +169,11 @@ check(
 check(
   '包含技能目录路由',
   routes.some((route) => route.path === '/dsh-starlight/skills'),
+  routes.map((route) => route.path).join(','),
+)
+check(
+  '包含插件市场路由',
+  routes.some((route) => route.path === '/dsh-starlight/market'),
   routes.map((route) => route.path).join(','),
 )
 
@@ -478,6 +483,74 @@ stubCatalog(() => {
 })
 const timedOut = await call({ path: '/dsh-starlight/skills', query: '?q=fresh-4' })
 check('上游超时 → 504', timedOut.status === 504 && timedOut.json?.error?.code === 'catalog_timeout', String(timedOut.status))
+
+/* ------------------------------------------------------------------ */
+/* 11. 插件市场（format 1 索引代理）                                   */
+/* ------------------------------------------------------------------ */
+
+console.log('\n[11] 插件市场索引（宿主代理）')
+
+const MARKET_BODY = {
+  format: 1,
+  title: { en: 'Test market', zh: '测试市场' },
+  metadata: { categories: {}, labels: {}, sortKeys: {} },
+  plugins: [
+    {
+      name: 'dsh-prompt-starlight',
+      title: { en: 'Starlight', zh: '星芒' },
+      description: { en: 'Rewrite drafts.', zh: '改写草稿。' },
+      author: 'Starlit Sky',
+      homepage: 'https://github.com/Starlit-Sky-code/dsh-prompt-starlight',
+      metadata: { category: 'prompt', keywords: [], labels: [], sortKeys: {} },
+      versions: [
+        {
+          version: '0.4.1',
+          publishTimestamp: 1,
+          source: { type: 'git', url: 'https://github.com/Starlit-Sky-code/dsh-prompt-starlight', commit: '5fc353b486f180219ec1371f6051d05e8cd6e752' },
+          engines: {},
+        },
+      ],
+    },
+    // 没有可用版本 → 仍列出，但不给安装参数
+    { name: 'no-version', title: { en: 'No version' }, versions: [] },
+    // 版本 commit 不合法 → 折不出安装参数
+    {
+      name: 'bad-commit',
+      versions: [{ version: '1.0.0', publishTimestamp: 1, source: { type: 'git', url: 'https://x.test/a', commit: 'nothex' }, engines: {} }],
+    },
+    // npm 来源
+    {
+      name: 'npm-plugin',
+      versions: [{ version: '2.1.0', publishTimestamp: 1, source: { type: 'npm' }, engines: {} }],
+    },
+  ],
+}
+
+stubCatalog(() => jsonResponse(MARKET_BODY))
+const marketOk = await call({ path: '/dsh-starlight/market', query: '?index=https%3A%2F%2Fexample.test%2Findex.json' })
+check('插件市场 200', marketOk.status === 200, String(marketOk.status))
+check('索引标题取本地化文本', marketOk.json?.title === '测试市场', String(marketOk.json?.title))
+const marketItems = marketOk.json?.items ?? []
+check('列出全部条目', marketItems.length === 4, String(marketItems.length))
+const firstPlugin = marketItems[0] ?? {}
+check('git 版本折成 git+https#commit', String(firstPlugin.spec).startsWith('git+https://github.com/Starlit-Sky-code/dsh-prompt-starlight.git#5fc353b4'), String(firstPlugin.spec))
+check('带出版本号与分类', firstPlugin.version === '0.4.1' && firstPlugin.category === 'prompt', JSON.stringify([firstPlugin.version, firstPlugin.category]))
+check('没有版本时不给安装参数', marketItems[1]?.spec === '', JSON.stringify(marketItems[1]?.spec))
+check('commit 不合法时不给安装参数', marketItems[2]?.spec === '', JSON.stringify(marketItems[2]?.spec))
+check('npm 版本折成 name@version', marketItems[3]?.spec === 'npm-plugin@2.1.0', String(marketItems[3]?.spec))
+
+const marketCached = await call({ path: '/dsh-starlight/market', query: '?index=https%3A%2F%2Fexample.test%2Findex.json' })
+check('同一索引第二次命中缓存', marketCached.json?.cached === true, String(marketCached.json?.cached))
+
+const badIndexUrl = await call({ path: '/dsh-starlight/market', query: '?index=http%3A%2F%2Fexample.test%2Findex.json' })
+check('非 https 索引 400', badIndexUrl.status === 400 && badIndexUrl.json?.error?.code === 'market_index', String(badIndexUrl.status))
+
+const noIndex = await call({ path: '/dsh-starlight/market' })
+check('缺索引地址 400', noIndex.status === 400 && noIndex.json?.error?.code === 'market_index', String(noIndex.status))
+
+stubCatalog(() => jsonResponse({ format: 2, plugins: [] }))
+const wrongFormat = await call({ path: '/dsh-starlight/market', query: '?index=https%3A%2F%2Fexample.test%2Fv2.json' })
+check('非 format 1 索引 502', wrongFormat.status === 502 && wrongFormat.json?.error?.code === 'market_format', String(wrongFormat.status))
 
 globalThis.fetch = realFetch
 

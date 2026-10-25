@@ -67,6 +67,10 @@ The gear in the popover opens a **standalone settings window** — the same conf
 
 <img src="docs/screenshots/settings-dialog.png" width="620" alt="Settings window" />
 
+The "Plugin market" tab (browsing a format 1 index, read-only, install specs one click away):
+
+<img src="docs/screenshots/settings-plugins.png" width="620" alt="Plugin market" />
+
 Settings page (Settings → Starlight) — model first, then the two sliders, the rest collapsed:
 
 <img src="docs/screenshots/settings.png" width="620" alt="Starlight settings page" />
