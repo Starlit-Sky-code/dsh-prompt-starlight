@@ -35,13 +35,34 @@ function sectionOf(text, version) {
   return body === '' ? null : body
 }
 
-const tag = process.argv[2]
-if (!tag) {
-  console.error('用法: node tools/extract-release-notes.mjs <tag> [输出文件]')
+const args = process.argv.slice(2)
+// --quiet：只验证「该版本的说明存在」，不打印内容。
+// 用它替代 `> /dev/null`——那在 Windows 的 cmd 下会生成 \dev\null 文件。
+const quiet = args.includes('--quiet')
+// --current：版本号取 package.json，而不是由调用方拼 shell 变量。
+// npm scripts 在 Windows 上走 cmd.exe，`$(node -p ...)` 这种 POSIX 命令替换不会被展开，
+// 所以脚本里不要出现 $()，交给本工具自己读。
+const useCurrent = args.includes('--current')
+
+const positional = args.filter((arg) => !arg.startsWith('--'))
+
+const pkgVersion = (() => {
+  try {
+    return JSON.parse(fs.readFileSync(path.join(root, 'package.json'), 'utf8')).version
+  } catch {
+    return undefined
+  }
+})()
+
+// 有位置参数就用它当 tag；否则（--current 或不带参数）取 package.json 的版本。
+const tag = positional[0] ?? (pkgVersion === undefined ? undefined : `v${pkgVersion}`)
+if (tag === undefined) {
+  console.error('用法: node tools/extract-release-notes.mjs <tag> [输出文件|--quiet]')
+  console.error('      node tools/extract-release-notes.mjs --current [--quiet]')
   process.exit(1)
 }
 const version = tag.replace(/^v/, '')
-const outputFile = process.argv[3]
+const outputFile = quiet ? undefined : positional[1]
 
 const sources = [
   { file: 'CHANGELOG.zh-CN.md', placeholder: '中文' },
@@ -79,7 +100,9 @@ if (chinese && english) parts.push('---', '')
 if (english) parts.push(`<details><summary>English</summary>`, '', english.body, '', '</details>', '')
 
 const notes = parts.join('\n')
-if (outputFile === undefined) {
+if (quiet) {
+  console.error(`${tag} 的版本说明可生成（${Buffer.byteLength(notes, 'utf8')} 字节，${chunks.length} 种语言）`)
+} else if (outputFile === undefined) {
   process.stdout.write(notes)
 } else {
   fs.writeFileSync(outputFile, notes, 'utf8')

@@ -105,7 +105,7 @@ jobs:
 
       # 版本说明必须存在，否则发版会产出空 Release
       - name: 版本说明可生成
-        run: node tools/extract-release-notes.mjs "v$(node -p "require('./package.json').version")" /tmp/notes.md
+        run: node tools/extract-release-notes.mjs --current /tmp/notes.md
 
       # 防止 files[] 把不该发的图带进包（历史上就吃过大图亏）
       - name: 打包体积不超过 2 MB

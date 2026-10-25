@@ -86,7 +86,7 @@ check('files[] 包含 CHANGELOG', Array.isArray(pkg.files) && pkg.files.includes
 // 版本说明必须能从 CHANGELOG 里抽取出来，否则 Release 会是空的
 let notes = ''
 try {
-  notes = execFileSync(process.execPath, ['tools/extract-release-notes.mjs', `v${pkg.version}`], { cwd: root, encoding: 'utf8' })
+  notes = execFileSync(process.execPath, ['tools/extract-release-notes.mjs', '--current'], { cwd: root, encoding: 'utf8' })
 } catch (error) {
   notes = ''
 }

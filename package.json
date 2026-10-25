@@ -51,7 +51,7 @@
     "sign": "node tools/stamp-signature.mjs",
     "sign:check": "node tools/stamp-signature.mjs --check",
     "install:profile": "node tools/install-profile.mjs",
-    "verify": "npm run sign:check && npm run test && node tools/check-plugin-meta.mjs && npm run market:validate && node tools/extract-release-notes.mjs v$(node -p \"require('./package.json').version\") > /dev/null",
+    "verify": "npm run sign:check && npm run test && node tools/check-plugin-meta.mjs && npm run market:validate && node tools/extract-release-notes.mjs --current --quiet",
     "prepublishOnly": "npm run verify"
   },
   "dsh": {
