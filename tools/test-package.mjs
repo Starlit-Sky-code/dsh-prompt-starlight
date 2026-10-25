@@ -21,6 +21,7 @@
 import fs from 'node:fs'
 import path from 'node:path'
 import { execFileSync } from 'node:child_process'
+import os from 'node:os'
 import { fileURLToPath } from 'node:url'
 
 const root = path.resolve(path.dirname(fileURLToPath(import.meta.url)), '..')
@@ -92,6 +93,30 @@ try {
 }
 check('能生成当前版本的 Release 说明', notes.length > 80, `${notes.length} 字符`)
 check('Release 说明是中英双语', notes.includes('###') && notes.includes('<details>'), notes.slice(0, 40))
+
+// CI 用的是「--current + 输出文件」这个组合，而它曾经把输出路径当成 tag
+// （位置参数含义随 --current 变化），发版时会把 Release 说明这一步打挂。
+const notesFile = path.join(os.tmpdir(), `starlight-notes-${process.pid}.md`)
+let notesFileOk = false
+try {
+  execFileSync(process.execPath, ['tools/extract-release-notes.mjs', '--current', notesFile], { cwd: root, stdio: 'ignore' })
+  notesFileOk = fs.existsSync(notesFile) && fs.readFileSync(notesFile, 'utf8').includes('###')
+} catch {
+  notesFileOk = false
+}
+check('--current 加输出文件可用（CI 用的就是这个组合）', notesFileOk, notesFile)
+try {
+  fs.rmSync(notesFile, { force: true })
+} catch {}
+
+// 不存在的版本必须失败，否则会发出空 Release
+let missingFails = false
+try {
+  execFileSync(process.execPath, ['tools/extract-release-notes.mjs', 'v999.0.0', '--quiet'], { cwd: root, stdio: 'ignore' })
+} catch {
+  missingFails = true
+}
+check('缺版本小节时抽取失败（不会产出空 Release）', missingFails)
 
 check('package.json 有 verify 脚本', typeof pkg.scripts?.verify === 'string')
 check('package.json 有 prepublishOnly（没验过不发）', typeof pkg.scripts?.prepublishOnly === 'string', JSON.stringify(pkg.scripts?.prepublishOnly))

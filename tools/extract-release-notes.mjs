@@ -44,6 +44,9 @@ const quiet = args.includes('--quiet')
 // 所以脚本里不要出现 $()，交给本工具自己读。
 const useCurrent = args.includes('--current')
 
+// 位置参数的含义随 --current 变化：
+//   有 --current 时第一个位置参数是**输出文件**
+//   没有 --current 时第一个是 tag，第二个才是输出文件
 const positional = args.filter((arg) => !arg.startsWith('--'))
 
 const pkgVersion = (() => {
@@ -54,15 +57,26 @@ const pkgVersion = (() => {
   }
 })()
 
-// 有位置参数就用它当 tag；否则（--current 或不带参数）取 package.json 的版本。
-const tag = positional[0] ?? (pkgVersion === undefined ? undefined : `v${pkgVersion}`)
+let tag = positional[0]
+let outputFile = positional[1]
+if (useCurrent) {
+  if (pkgVersion === undefined) {
+    console.error('读不到 package.json 的 version')
+    process.exit(1)
+  }
+  tag = `v${pkgVersion}`
+  outputFile = positional[0]
+}
 if (tag === undefined) {
-  console.error('用法: node tools/extract-release-notes.mjs <tag> [输出文件|--quiet]')
-  console.error('      node tools/extract-release-notes.mjs --current [--quiet]')
+  console.error('用法:')
+  console.error('  node tools/extract-release-notes.mjs <tag> [输出文件]')
+  console.error('  node tools/extract-release-notes.mjs --current [输出文件]')
+  console.error('  任意形式都可加 --quiet 只做校验')
   process.exit(1)
 }
+if (quiet) outputFile = undefined
+
 const version = tag.replace(/^v/, '')
-const outputFile = quiet ? undefined : positional[1]
 
 const sources = [
   { file: 'CHANGELOG.zh-CN.md', placeholder: '中文' },
