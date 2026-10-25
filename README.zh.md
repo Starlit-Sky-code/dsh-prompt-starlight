@@ -8,13 +8,13 @@
 
 <p align="center">
   <img alt="license AGPL-3.0" src="https://img.shields.io/badge/license-AGPL--3.0-ff9d32" />
-  <img alt="version" src="https://img.shields.io/badge/version-0.3.0-4d6bfe" />
-  <img alt="tests" src="https://img.shields.io/badge/tests-217%20passing-2f9e44" />
+  <img alt="version" src="https://img.shields.io/badge/version-0.4.0-4d6bfe" />
+  <img alt="tests" src="https://img.shields.io/badge/tests-249%20passing-2f9e44" />
   <img alt="DSH" src="https://img.shields.io/badge/DSH-0.2.0--rc.2-8a8f98" />
 </p>
 
 DSH 输入框工具行**左侧**的**圆形四角星**按钮（自带一圈描边光晕，从工具行里浮出来）：点一下，把草稿改写成一份更清晰、更完整、更可执行的提示词。
-优化规则、风格、语言、改写强度**全部可自定义**——内置规则可逐条开关，也可以追加自己的规则，并且有**独立设置页**（设置 → 星芒提示词）。
+优化规则、强度、详细度、语言、模型**全部可自定义**——内置规则可逐条开关，也可以追加自己的规则，并且有**独立设置页**（设置 → 星芒提示词）。
 
 > 独立插件，不改 DSH 源码，不注入 `index.html`，只占两个官方槽位席位。
 
@@ -36,8 +36,8 @@ DSH 输入框工具行**左侧**的**圆形四角星**按钮（自带一圈描�
 | ✦ 一键优化 | 读取当前草稿 → 交给模型按规则改写 → 原子回填，光标回到输入框 |
 | ✦ 可自定义规则 | 11 条内置规则，按「基础结构 / 表达质量 / 保真护栏」分组展示，逐条开关 + 分组计数 + 「全开 / 全关」 |
 | ✦ 自定义追加规则 | 一行一条，优先级高于内置规则 |
-| ✦ 7 档风格 | 自动 / 精简 / 标准 / 详尽 / 工程 / 写作 / 分析（选中项下方直接显示该档说明） |
-| ✦ 3 档强度 | 轻改 / 均衡 / 重写 —— 控制「改多少」而不是「写多长」 |
+| 🎚 **滑块为主** | **强度** 5 档（最小 → 轻改 → 均衡 → 重写 → 重构）与 **详细度** 3 档（精简 / 标准 / 详尽）各一根滑块，档位是真档位，不是把 3 档硬凑成 5 格 |
+| ✦ 场景 | 通用 / 工程 / 写作 / 分析（折叠在「更多设置」里） |
 | ✦ 输出语言 | 跟随原文 / 强制中文 / 强制 English |
 | 🎛 **模型切换** | 下拉可选宿主已挂载的任意模型（`provider · 友好名`），默认「跟随会话当前模型」；只影响星芒的旁路调用，不动你的会话模型 |
 | ⚙ **独立设置页** | **设置 → 星芒提示词**：开关、形态、11 条规则、自定义规则、模型、温度/上限/超时，一处配完 |
@@ -47,6 +47,18 @@ DSH 输入框工具行**左侧**的**圆形四角星**按钮（自带一圈描�
 | 🖱 右键 / 长按 | 就地弹出精简规则浮层（长按 520ms，适配触屏）；完整项在设置页 |
 
 **不做**的事：不发消息、不产生对话轮次、不写会话日志、不改你的其他插件配置。
+
+### 长什么样
+
+浮层（右键按钮 / 长按）——默认只有 4 个控件，其余全收在「更多设置」里：
+
+<img src="docs/screenshots/popover.zh.png" width="380" alt="星芒浮层" />
+
+设置页（设置 → 星芒提示词）——模型在最前，然后是两根滑块，其余折叠：
+
+<img src="docs/screenshots/settings.zh.png" width="620" alt="星芒设置页" />
+
+> 截图由 `node tools/make-shots.mjs` 从**真实组件**渲染而来（jsdom + React + headless Edge），不是手绘稿，不会和实际界面脱节。
 
 ### 界面细节
 
@@ -110,7 +122,7 @@ http://127.0.0.1:19387/plugins/dsh-prompt-starlight/client.js
 | 「设置 → 星芒提示词」 | 打开**独立设置页**（全部选项 + 高级项） |
 | `Ctrl/⌘ + Shift + O` | 在输入框内触发优化 |
 
-浮层与设置页的改动都是**点保存才生效**，两处共用同一份配置；「恢复默认」会把全部规则、风格、语言、强度、模型覆盖恢复出厂。
+浮层与设置页的改动都是**点保存才生效**，两处共用同一份配置；「恢复默认」会把规则、滑块档位与模型覆盖全部恢复出厂。
 
 ### 设置页有什么
 
@@ -119,7 +131,7 @@ http://127.0.0.1:19387/plugins/dsh-prompt-starlight/client.js
 | 分区 | 内容 |
 |---|---|
 | 开关 | 总开关：关掉后按钮只做本地格式整理，不调用模型 |
-| 改写形态 | 风格（7 档）/ 强度（3 档）/ 输出语言（3 档），每个分段下方显示当前选中档的解释 |
+| 改写力度 | **强度**（5 档滑块）+ **详细度**（3 档滑块）+ 语言（3 段），滑块下方显示当前档位的解释 |
 | 内置规则 | 11 条按组勾选（基础结构 / 表达质量 / 保真护栏）+ 每组计数 + 「全开 / 全关」 |
 | 自定义规则 | 多行文本域，一行一条 |
 | 优化模型 | 下拉切换（`跟随会话当前模型` 或任意已挂载模型）+ `⟳` 重新读目录；显示当前会话模型与读取失败的 provider |
@@ -145,7 +157,8 @@ http://127.0.0.1:19387/plugins/dsh-prompt-starlight/client.js
 {
   "version": 1,
   "enabled": true,
-  "style": "auto",
+  "verbosity": "standard",
+  "lens": "auto",
   "locale": "auto",
   "depth": "balanced",
   "disabledRules": ["assumptions"],
@@ -163,7 +176,8 @@ http://127.0.0.1:19387/plugins/dsh-prompt-starlight/client.js
 
 | 字段 | 取值 | 说明 |
 |---|---|---|
-| `style` | `auto` `concise` `standard` `detailed` `engineering` `writing` `analysis` | 提示词形态 |
+| `verbosity` | `concise` `standard` `detailed` | 详细度（写多长） |
+| `lens` | `auto` `engineering` `writing` `analysis` | 场景（写成什么形态） |
 | `depth` | `light` `balanced` `strong` | 改写幅度 |
 | `locale` | `auto` `zh` `en` | 输出语言 |
 | `disabledRules` | 规则 id 数组 | 想关掉哪条内置规则 |
@@ -171,6 +185,8 @@ http://127.0.0.1:19387/plugins/dsh-prompt-starlight/client.js
 | `maxTokens` | 256–8000 | 单次输出上限（会随草稿长度二次缩放） |
 | `temperature` | 0–1.5 | 默认 0.3，稳定少发散 |
 | `timeoutMs` | 5000–300000 | 单次超时 |
+
+> **从 0.3 升级**：旧的 `style` 字段会自动拆成 `verbosity` + `lens`（见 `LEGACY_STYLE_MAP`），老配置文件不用改；下次保存时写成新字段。旧值 `engineering` → `lens: engineering`，`concise` → `verbosity: concise`，其余类推。
 | `provider` / `model` | 字符串 | 留空 = 跟随会话当前模型；填了就固定用这一对（设置页的下拉就是在改这两个字段） |
 
 内置规则 id（括号里是分组）：
@@ -232,9 +248,9 @@ STARLIGHT_TRUSTED_HOSTS=192.168.1.9:19387,my-box.local
 ## 开发与测试
 
 ```powershell
-node tools/test-package.mjs   # 包形状：48 项（dsh.client / exports / patch / 槽位 / 关键实现）
-node tools/test-host.mjs      # 宿主：79 项（路由、栅栏、持久化、模型目录、降级、提示词构造、清洗）
-node tools/test-client.mjs    # 浏览器：90 项（加载器契约、两个槽位、渲染、点击、撤销、浮层、设置页、模型切换）
+node tools/test-package.mjs   # 包形状与署名：67 项
+node tools/test-host.mjs      # 宿主：86 项（路由、栅栏、持久化、模型目录、图标、降级、提示词构造、清洗）
+node tools/test-client.mjs    # 浏览器：96 项（两个槽位、滑块、折叠、模型切换、点击、撤销）
 ```
 
 `test-client.mjs` 需要真实 React 与 jsdom（只装在 `tools/fixture`，不进插件包）：
@@ -253,6 +269,14 @@ npm run preview   # = node tools/make-preview.mjs && node tools/check-preview.mj
 生成 `tools/preview.html`，双击用浏览器打开。它不是手抄样张：脚本用 jsdom + 真实 React 挂载**真实组件**（按钮、右键浮层、设置页），再把注入到 `document` 里的样式与 `outerHTML` 抽出来拼页，所以预览与真实界面不会漂移。页面含工具行位置、五种状态、3 倍放大外圈、浮层与设置页的真实排版，并支持亮/暗主题切换。
 
 `tools/check-preview.mjs` 顺手断言预览里确实包含这些真实片段（防止某天退化成空壳）。
+
+### 生成 README 截图
+
+```powershell
+node tools/make-shots.mjs   # 写出 docs/screenshots/{popover,settings}{,.zh}.png
+```
+
+同样是渲染真实组件，再用本机 Edge/Chrome 的 headless 模式截图；中英各一套，分别给两份 README 用。
 
 `tools/asar-list.mjs` 是排查用的小工具，可以直接列 / 解包 DSH 的 `app.asar`：
 
@@ -297,7 +321,7 @@ node tools/asar-list.mjs "$env:DSH_HOME\resources\app.asar" list "dsh-client-ui-
 把 `depth` 调成 `light`，并确保 `preserve` / `verbatim` / `noinvent` 三条规则处于勾选状态（它们默认在「保真护栏」组里）。
 
 **想要更短的输出**
-`style: concise` + `depth: light`。
+`verbosity: concise` + `depth: light`。
 
 **改了 `starlight-prompt.json` 没生效**
 走设置页/浮层保存会立即刷新；手改文件按 mtime 检测，秒级生效；实在不行刷新页面重开设置页。

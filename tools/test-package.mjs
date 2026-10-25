@@ -121,7 +121,6 @@ for (const relative of [
   'assets/icon.png',
   'assets/icon-640.png',
   'assets/social-preview.png',
-  'design/settings-variants.html',
 ]) {
   check(`存在 ${relative}`, exists(relative))
 }
@@ -131,12 +130,12 @@ console.log('\n[8] 署名与版权')
 
 const MARK = 'Starlit Sky'
 
-// 所有需要署名的源文件：lib/*.js、tools/*.mjs、tools/*.py、cordis.patch.yml、design/*.html
+// 所有需要署名的源文件：lib/*.js、tools/*.mjs、tools/*.py、cordis.patch.yml
 const signedFiles = [
   ...fs.readdirSync(path.join(root, 'lib')).filter((n) => n.endsWith('.js')).map((n) => `lib/${n}`),
   ...fs.readdirSync(path.join(root, 'tools')).filter((n) => n.endsWith('.mjs') || n.endsWith('.py')).map((n) => `tools/${n}`),
   'cordis.patch.yml',
-  'design/settings-variants.html',
+
 ]
 
 const unsigned = signedFiles.filter((relative) => !read(relative).slice(0, 400).includes(MARK))

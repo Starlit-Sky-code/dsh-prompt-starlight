@@ -325,11 +325,11 @@ check('失败弹出错误提示', /模型挂了/.test(dom.window.document.queryS
 /* 4. 按钮右键浮层                                                    */
 /* ------------------------------------------------------------------ */
 
-console.log('\n[4] 按钮右键浮层')
+console.log('\n[4] 浮层：模型置顶 + 滑块')
 
 const manifestPayload = () => ({
   ok: true,
-  version: '0.2.0',
+  version: '0.4.0',
   configFile: 'C:/fake/starlight-prompt.json',
   llmAvailable: true,
   rules: [
@@ -342,15 +342,31 @@ const manifestPayload = () => ({
     { id: 'quality', label: { zh: '表达质量', en: 'Expression quality' }, note: { zh: '清楚', en: 'Clarity' } },
     { id: 'guard', label: { zh: '保真护栏', en: 'Fidelity guards' }, note: { zh: '不跑偏', en: 'Keeps it honest' } },
   ],
-  styles: [
-    { id: 'auto', label: { zh: '自动', en: 'Auto' }, note: { zh: '自动', en: 'Auto' } },
+  verbosities: [
     { id: 'concise', label: { zh: '精简', en: 'Concise' }, note: { zh: '短', en: 'Short' } },
+    { id: 'standard', label: { zh: '标准', en: 'Standard' }, note: { zh: '标准', en: 'Standard' } },
+    { id: 'detailed', label: { zh: '详尽', en: 'Detailed' }, note: { zh: '长', en: 'Long' } },
   ],
-  locales: [{ id: 'auto', label: { zh: '跟随原文', en: 'Follow' }, note: { zh: '', en: '' } }],
-  depths: [{ id: 'balanced', label: { zh: '均衡', en: 'Balanced' }, note: { zh: '', en: '' } }],
+  lenses: [
+    { id: 'auto', label: { zh: '通用', en: 'General' }, note: { zh: '通用', en: 'General' } },
+    { id: 'engineering', label: { zh: '工程', en: 'Engineering' }, note: { zh: '工程', en: 'Engineering' } },
+  ],
+  locales: [
+    { id: 'auto', label: { zh: '跟随原文', en: 'Follow' }, note: { zh: '', en: '' } },
+    { id: 'zh', label: { zh: '中文', en: 'Chinese' }, note: { zh: '', en: '' } },
+    { id: 'en', label: { zh: 'English', en: 'English' }, note: { zh: '', en: '' } },
+  ],
+  depths: [
+    { id: 'minimal', label: { zh: '最小', en: 'Minimal' }, note: { zh: '只改错', en: 'Fix errors' } },
+    { id: 'light', label: { zh: '轻改', en: 'Light' }, note: { zh: '顺语句', en: 'Tidy' } },
+    { id: 'balanced', label: { zh: '均衡', en: 'Balanced' }, note: { zh: '默认', en: 'Default' } },
+    { id: 'strong', label: { zh: '重写', en: 'Strong' }, note: { zh: '大改', en: 'Big' } },
+    { id: 'rewrite', label: { zh: '重构', en: 'Rebuild' }, note: { zh: '推倒重写', en: 'Rebuild' } },
+  ],
   config: {
     enabled: true,
-    style: 'auto',
+    verbosity: 'standard',
+    lens: 'auto',
     locale: 'auto',
     depth: 'balanced',
     disabledRules: [],
@@ -389,16 +405,49 @@ await act(async () => {
 await tick()
 
 const panel = dom.window.document.querySelector('.dshsl-panel')
-check('右键打开面板', panel !== null)
-check('面板标题正确', /提示词优化规则|prompt rules/i.test(panel.textContent), panel.querySelector('.dshsl-title')?.textContent)
-const checkboxes = panel.querySelectorAll('.dshsl-rule input[type=checkbox]')
-check('渲染出规则勾选框', checkboxes.length === 4 /* 3 条规则 + 启用开关 */, String(checkboxes.length))
-check('规则默认勾选', checkboxes[0].checked === true && checkboxes[1].checked === true)
+check('右键打开浮层', panel !== null)
 
+// 模型必须排在第一位
+const firstRow = panel.querySelector('.dshsl-body .dshsl-row')
+check('第一项是模型', firstRow !== null && /模型|Model/.test(firstRow.textContent), firstRow && firstRow.textContent.slice(0, 40))
+check('模型控件在下拉里', firstRow !== null && firstRow.querySelector('.dshsl-select') !== null)
+check('浮层头部带插件图标', panel.querySelector('.dshsl-head img.dshsl-icon') !== null)
+
+// 两根滑块
+const ranges = Array.from(panel.querySelectorAll('.dshsl-body .dshsl-range'))
+check('浮层有两根滑块', ranges.length === 2, String(ranges.length))
+check('强度滑块是 5 档', ranges[0] && ranges[0].getAttribute('max') === '4', ranges[0] && ranges[0].getAttribute('max'))
+check('详细度滑块是 3 档', ranges[1] && ranges[1].getAttribute('max') === '2', ranges[1] && ranges[1].getAttribute('max'))
+check('强度滑块当前在均衡（索引 2）', ranges[0] && ranges[0].value === '2', ranges[0] && ranges[0].value)
+check('刻度文字齐全', panel.querySelectorAll('.dshsl-tick').length === 8, String(panel.querySelectorAll('.dshsl-tick').length))
+
+// 语言分段 3 个
+const langGroup = Array.from(panel.querySelectorAll('.dshsl-seg')).pop()
+check('语言有 3 个选项', langGroup !== undefined && langGroup.querySelectorAll('button').length === 3, langGroup && String(langGroup.querySelectorAll('button').length))
+
+// 规则默认折叠
+const more = panel.querySelector('.dshsl-more')
+check('有折叠区', more !== null)
+check('折叠区默认收起', more.getAttribute('data-open') === '0')
+check('收起时看不到规则勾选框', panel.querySelectorAll('.dshsl-rule input[type=checkbox]').length === 0)
+
+await act(async () => {
+  more.querySelector('.dshsl-more-head').dispatchEvent(new dom.window.MouseEvent('click', { bubbles: true }))
+})
+check('点击后展开', panel.querySelector('.dshsl-more').getAttribute('data-open') === '1')
+check('展开后能看到规则', panel.querySelectorAll('.dshsl-rule input[type=checkbox]').length === 4, String(panel.querySelectorAll('.dshsl-rule input[type=checkbox]').length))
+check('展开后能看到场景', /场景|Scenario/.test(panel.textContent))
+
+// 拖到最小强度 + 取消勾选一条规则，然后保存
+await act(async () => {
+  const setter = Object.getOwnPropertyDescriptor(dom.window.HTMLInputElement.prototype, 'value').set
+  setter.call(ranges[0], '0')
+  ranges[0].dispatchEvent(new dom.window.Event('input', { bubbles: true }))
+})
 await act(async () => {
   panel.querySelector('.dshsl-rule input[type=checkbox]').click()
 })
-check('取消勾选后立即反映到界面', panel.querySelector('.dshsl-rule input[type=checkbox]').checked === false)
+check('滑块与勾选都让状态变脏', /未保存|Unsaved/.test(panel.querySelector('.dshsl-hint').textContent), panel.querySelector('.dshsl-hint').textContent)
 
 const saveButton = Array.from(panel.querySelectorAll('.dshsl-btn2')).find((node) => /保存|Save/.test(node.textContent))
 check('存在保存按钮', saveButton !== undefined)
@@ -407,41 +456,36 @@ await act(async () => {
 })
 await tick()
 check('保存请求已发出', savedConfigRequest !== null)
-check('保存内容只含被取消的规则', savedConfigRequest && JSON.stringify(savedConfigRequest.disabledRules) === '["goal"]', JSON.stringify(savedConfigRequest))
+check('保存带最小强度', savedConfigRequest && savedConfigRequest.depth === 'minimal', JSON.stringify(savedConfigRequest && savedConfigRequest.depth))
+check('保存带详细度与场景', savedConfigRequest && savedConfigRequest.verbosity === 'standard' && savedConfigRequest.lens === 'auto', JSON.stringify([savedConfigRequest && savedConfigRequest.verbosity, savedConfigRequest && savedConfigRequest.lens]))
+check('保存带被取消的规则', savedConfigRequest && JSON.stringify(savedConfigRequest.disabledRules) === '["goal"]', JSON.stringify(savedConfigRequest && savedConfigRequest.disabledRules))
+check('保存不再提交旧 style 字段', savedConfigRequest && !('style' in savedConfigRequest), JSON.stringify(Object.keys(savedConfigRequest || {})))
 
 await act(async () => {
   dom.window.document.dispatchEvent(new dom.window.KeyboardEvent('keydown', { key: 'Escape', bubbles: true }))
 })
-check('Esc 关闭面板', dom.window.document.querySelector('.dshsl-panel') === null)
+check('Esc 关闭浮层', dom.window.document.querySelector('.dshsl-panel') === null)
 
 /* ------------------------------------------------------------------ */
 /* 5. 独立设置页                                                      */
 /* ------------------------------------------------------------------ */
 
-console.log('\n[5] 独立设置页')
+console.log('\n[5] 设置页：同样的骨架')
 
 const pageContainer = dom.window.document.createElement('div')
 dom.window.document.body.appendChild(pageContainer)
 const pageRoot = ReactDOMClient.createRoot(pageContainer)
 
 let pageSave = null
-let modelsFetchCount = 0
-const modelCatalog = () => ({
-  ok: true,
-  models: [
-    { provider: 'deepseek-account', model: 'deepseek-flash', name: 'DeepSeek V4.1 Flash' },
-    { provider: 'deepseek-account', model: 'deepseek-pro', name: 'DeepSeek V4.1 Pro' },
-    { provider: 'openrouter', model: 'anthropic/claude', name: 'Claude (via OpenRouter)' },
-  ],
-  default: { provider: 'deepseek-account', model: 'deepseek-flash', source: 'default' },
-  configured: { provider: '', model: '' },
-  errors: [],
-})
 fetchImpl = (url, body) => {
   if (url.endsWith('/manifest')) return manifestPayload()
   if (url.includes('/models')) {
-    modelsFetchCount += 1
-    return modelCatalog()
+    return {
+      ok: true,
+      models: [{ provider: 'deepseek-account', model: 'deepseek-pro', name: 'DeepSeek V4.1 Pro' }],
+      default: { provider: 'deepseek-account', model: 'deepseek-flash', source: 'default' },
+      errors: [],
+    }
   }
   if (url.endsWith('/config')) {
     pageSave = body
@@ -457,17 +501,24 @@ await act(async () => {
 await tick()
 
 check('设置页渲染出标题', /星芒提示词优化|Starlight prompt optimizer/.test(pageContainer.textContent))
-check('设置页显示配置文件路径', pageContainer.textContent.includes('starlight-prompt.json'))
-check('设置页含风格档位', pageContainer.querySelectorAll('.dshsl-seg').length === 3, String(pageContainer.querySelectorAll('.dshsl-seg').length))
-check('选中档位下方显示说明', pageContainer.querySelectorAll('.dshsl-seg-note').length === 3, String(pageContainer.querySelectorAll('.dshsl-seg-note').length))
-check('设置页含规则勾选框', pageContainer.querySelectorAll('.dshsl-rule input[type=checkbox]').length === 4, String(pageContainer.querySelectorAll('.dshsl-rule input[type=checkbox]').length))
-// 注意：设置页的「启用开关」也是一个 .dshsl-rule，所以规则列表要用 .dshsl-rules 限定
-const pageRuleInputs = () => Array.from(pageContainer.querySelectorAll('[data-dshsl-rules] input[type=checkbox]'))
-check('设置页规则列表含 3 条规则', pageRuleInputs().length === 3, String(pageRuleInputs().length))
-check('设置页含高级数字字段', pageContainer.querySelectorAll('.dshsl-input').length === 3, String(pageContainer.querySelectorAll('.dshsl-input').length))
-check('设置页头部有状态徽标', pageContainer.querySelectorAll('.dshsl-pill').length >= 2, String(pageContainer.querySelectorAll('.dshsl-pill').length))
-check('设置页有 hero 徽标', pageContainer.querySelector('.dshsl-hero-badge') !== null)
-check('规则按分组渲染', pageContainer.querySelectorAll('.dshsl-group').length === 2, String(pageContainer.querySelectorAll('.dshsl-group').length))
+check('设置页头部带插件图标', pageContainer.querySelector('.dshsl-hero img.dshsl-icon') !== null)
+
+// 顺序：模型卡片在改写力度卡片之前
+const cards = Array.from(pageContainer.querySelectorAll('.dshsl-card'))
+check('有模型与改写力度两张主卡', cards.length === 2, String(cards.length))
+check('模型是第一张卡', /模型|Model/.test(cards[0].textContent), cards[0] && cards[0].textContent.slice(0, 30))
+check('改写力度是第二张卡', /改写力度|Rewrite force/.test(cards[1].textContent), cards[1] && cards[1].textContent.slice(0, 30))
+
+const pageRanges = Array.from(pageContainer.querySelectorAll('.dshsl-range'))
+check('主��面两根滑块', pageRanges.length === 2, String(pageRanges.length))
+check('设置页强度也是 5 档', pageRanges[0] && pageRanges[0].getAttribute('max') === '4')
+check('设置页有 3 个语言选项', pageContainer.querySelectorAll('.dshsl-seg button').length === 3, String(pageContainer.querySelectorAll('.dshsl-seg button').length))
+
+// 折叠区：规则 / 自定义规则 / 高级 / 关于
+const mores = Array.from(pageContainer.querySelectorAll('.dshsl-more'))
+check('四个折叠区', mores.length === 4, String(mores.length))
+check('折叠区默认全收起', mores.every((node) => node.getAttribute('data-open') === '0'))
+check('收起时不渲染规则勾选', pageContainer.querySelectorAll('.dshsl-rule input[type=checkbox]').length === 0)
 
 const pageButtons = () => Array.from(pageContainer.querySelectorAll('.dshsl-page-foot .dshsl-btn2'))
 const pageSaveButton = () => pageButtons().find((node) => /保存|Save/.test(node.textContent))
@@ -476,42 +527,32 @@ const pageStatus = () => pageContainer.querySelector('.dshsl-status')
 check('初始状态「与磁盘一致」', /磁盘|disk/i.test(pageStatus().textContent), pageStatus().textContent)
 check('未修改时保存按钮禁用', pageSaveButton().disabled === true)
 
-/* —— 模型切换：初始为「跟随会话」 —— */
-check('拉了模型目录', modelsFetchCount >= 1, String(modelsFetchCount))
-const modelSelect = pageContainer.querySelector('.dshsl-select')
-check('渲染出模型下拉', modelSelect !== null)
-check('下拉含「跟随会话」+ 目录模型', modelSelect.options.length === 4, String(modelSelect.options.length))
-check('默认选中「跟随会话」', modelSelect.value === '', JSON.stringify(modelSelect.value))
-check('显示会话模型提示', /deepseek-flash|会话模型|session model/i.test(pageContainer.textContent))
-
-// 改一条规则 → 变脏 → 保存可用
+// 展开「高级」→ 应该出现 3 根数字滑块
+const advancedMore = mores[2]
 await act(async () => {
-  pageRuleInputs()[0].click()
+  advancedMore.querySelector('.dshsl-more-head').dispatchEvent(new dom.window.MouseEvent('click', { bubbles: true }))
 })
-check('修改后状态变「未保存」', pageStatus().getAttribute('data-dirty') === '1', pageStatus().textContent)
-check('修改后保存按钮可用', pageSaveButton().disabled === false)
-check('规则勾选已被取消', pageRuleInputs()[0].checked === false)
+const allRanges = Array.from(pageContainer.querySelectorAll('.dshsl-range'))
+check('高级展开后共 5 根滑块', allRanges.length === 5, String(allRanges.length))
+check('高级滑块是数字区间', allRanges[2].getAttribute('min') === '256' && allRanges[2].getAttribute('max') === '8000', allRanges[2] && `${allRanges[2].getAttribute('min')}..${allRanges[2].getAttribute('max')}`)
 
-// 切到具体模型
+// 展开「规则」→ 勾选框出现
 await act(async () => {
-  const setter = Object.getOwnPropertyDescriptor(dom.window.HTMLSelectElement.prototype, 'value').set
-  setter.call(modelSelect, 'deepseek-account\u001fdeepseek-pro')
-  modelSelect.dispatchEvent(new dom.window.Event('change', { bubbles: true }))
+  mores[0].querySelector('.dshsl-more-head').dispatchEvent(new dom.window.MouseEvent('click', { bubbles: true }))
 })
-await tick()
-check('切换模型后下拉值更新', pageContainer.querySelector('.dshsl-select').value === 'deepseek-account\u001fdeepseek-pro')
-check('切换模型后头部徽标显示固定模型', /deepseek-pro/.test(pageContainer.querySelector('.dshsl-hero').textContent), pageContainer.querySelector('.dshsl-hero').textContent)
+check('规则展开后有 4 个勾选框', pageContainer.querySelectorAll('.dshsl-rule input[type=checkbox]').length === 4, String(pageContainer.querySelectorAll('.dshsl-rule input[type=checkbox]').length))
 
-// 再改高级字段里的 temperature
-const numberInputs = Array.from(pageContainer.querySelectorAll('.dshsl-input[type=number]'))
-check('有三个数字高级字段', numberInputs.length === 3, String(numberInputs.length))
+// 调一根滑块 + 取消一条规则，然后保存
 await act(async () => {
-  const temperature = numberInputs[1]
   const setter = Object.getOwnPropertyDescriptor(dom.window.HTMLInputElement.prototype, 'value').set
-  setter.call(temperature, '0.6')
-  temperature.dispatchEvent(new dom.window.Event('input', { bubbles: true }))
+  setter.call(pageRanges[1], '2')
+  pageRanges[1].dispatchEvent(new dom.window.Event('input', { bubbles: true }))
 })
-await tick()
+await act(async () => {
+  pageContainer.querySelector('.dshsl-rule input[type=checkbox]').click()
+})
+check('改动后状态变「未保存」', pageStatus().getAttribute('data-dirty') === '1', pageStatus().textContent)
+check('改动后保存按钮可用', pageSaveButton().disabled === false)
 
 await act(async () => {
   pageSaveButton().dispatchEvent(new dom.window.MouseEvent('click', { bubbles: true }))
@@ -519,39 +560,10 @@ await act(async () => {
 await tick()
 
 check('设置页发出保存请求', pageSave !== null)
-check('保存含被停用的规则', pageSave && JSON.stringify(pageSave.disabledRules) === '["goal"]', JSON.stringify(pageSave && pageSave.disabledRules))
-check('保存含高级字段', pageSave && pageSave.maxTokens === 1600 && pageSave.timeoutMs === 60000, JSON.stringify(pageSave))
-check('保存含选中的模型', pageSave && pageSave.provider === 'deepseek-account' && pageSave.model === 'deepseek-pro', JSON.stringify([pageSave && pageSave.provider, pageSave && pageSave.model]))
-check('保存含改后的温度', pageSave && pageSave.temperature === 0.6, JSON.stringify(pageSave && pageSave.temperature))
+check('保存带详细度=详尽', pageSave && pageSave.verbosity === 'detailed', JSON.stringify(pageSave && pageSave.verbosity))
+check('保存带取消的规则', pageSave && JSON.stringify(pageSave.disabledRules) === '["goal"]', JSON.stringify(pageSave && pageSave.disabledRules))
+check('保存带高级字段', pageSave && pageSave.maxTokens === 1600 && pageSave.timeoutMs === 60000, JSON.stringify(pageSave))
 check('保存后状态回到「已保存」', pageStatus().getAttribute('data-dirty') === '0', pageStatus().textContent)
-
-// 切回「跟随会话」也要能保存
-await act(async () => {
-  const setter = Object.getOwnPropertyDescriptor(dom.window.HTMLSelectElement.prototype, 'value').set
-  setter.call(pageContainer.querySelector('.dshsl-select'), '')
-  pageContainer.querySelector('.dshsl-select').dispatchEvent(new dom.window.Event('change', { bubbles: true }))
-})
-await tick()
-await act(async () => {
-  pageSaveButton().dispatchEvent(new dom.window.MouseEvent('click', { bubbles: true }))
-})
-await tick()
-check('切回「跟随会话」后保存为空路由', pageSave && pageSave.provider === '' && pageSave.model === '', JSON.stringify([pageSave && pageSave.provider, pageSave && pageSave.model]))
-
-// 全关 / 全开
-await act(async () => {
-  const allOff = Array.from(pageContainer.querySelectorAll('.dshsl-btn3')).find((node) => /全关|All off/.test(node.textContent))
-  allOff.dispatchEvent(new dom.window.MouseEvent('click', { bubbles: true }))
-})
-const checkedAfterAllOff = pageRuleInputs()
-check('「全关」清空所有规则勾选', checkedAfterAllOff.every((input) => input.checked === false))
-
-await act(async () => {
-  const allOn = Array.from(pageContainer.querySelectorAll('.dshsl-btn3')).find((node) => /全开|All on/.test(node.textContent))
-  allOn.dispatchEvent(new dom.window.MouseEvent('click', { bubbles: true }))
-})
-const checkedAfterAllOn = pageRuleInputs()
-check('「全开」恢复所有规则勾选', checkedAfterAllOn.every((input) => input.checked === true))
 
 /* 宿主不可达时的降级 */
 fetchImpl = () => ({ ok: false, error: { code: 'network', message: '宿主无响应' } })
@@ -562,10 +574,9 @@ await act(async () => {
   failRoot.render(React.createElement(SettingsSection, {}))
 })
 await tick()
-check('宿主不可达时设置页给出提示', /宿主无响应|宿主半部没有响应|host half/i.test(failContainer.textContent), failContainer.textContent.slice(0, 120))
+check('宿主不可达时给出提示', /宿主无响应|宿主半部没有响应|host half/i.test(failContainer.textContent), failContainer.textContent.slice(0, 120))
 check('宿主不可达时提供重试按钮', Array.from(failContainer.querySelectorAll('button')).some((node) => /重试|Retry/.test(node.textContent)))
 
-/* ------------------------------------------------------------------ */
 
 console.log(`\n结果：${passes} 通过 / ${failures} 失败`)
 await act(async () => {

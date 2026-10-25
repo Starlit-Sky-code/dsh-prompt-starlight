@@ -150,7 +150,7 @@ async function call({ kind = 'exact', path: routePath, ...requestInit }) {
 console.log('\n[1] 插件形状')
 const ctx = boot()
 check('name 为 dsh-prompt-starlight', plugin.name === 'dsh-prompt-starlight', plugin.name)
-check('注册了 6 条路由', routes.length === 6, String(routes.length))
+check('注册了 7 条路由', routes.length === 7, String(routes.length))
 check(
   '全部为 exact 路由且前缀正确',
   routes.every((route) => route.kind === 'exact' && route.path.startsWith('/dsh-starlight/')),
@@ -159,6 +159,11 @@ check(
 check(
   '包含模型目录路由',
   routes.some((route) => route.path === '/dsh-starlight/models'),
+  routes.map((route) => route.path).join(','),
+)
+check(
+  '包含图标路由',
+  routes.some((route) => route.path === '/dsh-starlight/icon.png'),
   routes.map((route) => route.path).join(','),
 )
 
@@ -195,9 +200,13 @@ console.log('\n[3] 目录与探活')
 const manifest = await call({ path: '/dsh-starlight/manifest' })
 check('manifest 200', manifest.status === 200, String(manifest.status))
 check('规则数为 11', manifest.json.rules.length === 11, String(manifest.json.rules.length))
-check('风格数为 7', manifest.json.styles.length === 7, String(manifest.json.styles.length))
+check('强度档位为 5', manifest.json.depths.length === 5, String(manifest.json.depths.length))
+check('详细度档位为 3', manifest.json.verbosities.length === 3, String(manifest.json.verbosities.length))
+check('场景档位为 4', manifest.json.lenses.length === 4, String(manifest.json.lenses.length))
+check('不再下发旧 styles 字段', manifest.json.styles === undefined)
 check('llmAvailable 为 true', manifest.json.llmAvailable === true)
-check('默认 style=auto', manifest.json.config.style === 'auto', manifest.json.config.style)
+check('默认 verbosity=standard', manifest.json.config.verbosity === 'standard', manifest.json.config.verbosity)
+check('默认 lens=auto', manifest.json.config.lens === 'auto', manifest.json.config.lens)
 check('规则条目带双语标题', manifest.json.rules[0].title.zh !== undefined && manifest.json.rules[0].title.en !== undefined)
 
 const health = await call({ path: '/dsh-starlight/health' })
@@ -246,28 +255,30 @@ console.log('\n[4] 规则持久化')
 const saved = await call({
   path: '/dsh-starlight/config',
   method: 'POST',
-  body: { style: 'engineering', depth: 'strong', locale: 'zh', disabledRules: ['structure', 'bogus-id'], customRules: ['必须包含验收小节', '  ', '不要用"请确保"'] },
+  body: { verbosity: 'detailed', lens: 'engineering', depth: 'rewrite', locale: 'zh', disabledRules: ['structure', 'bogus-id'], customRules: ['必须包含验收小节', '  ', '不要用"请确保"'] },
 })
 check('保存 200', saved.status === 200, String(saved.status))
-check('style 已保存', saved.json.config.style === 'engineering', saved.json.config.style)
+check('verbosity 已保存', saved.json.config.verbosity === 'detailed', saved.json.config.verbosity)
+check('lens 已保存', saved.json.config.lens === 'engineering', saved.json.config.lens)
+check('强度 5 档可选 rewrite', saved.json.config.depth === 'rewrite', saved.json.config.depth)
 check('未知规则 id 被丢弃', saved.json.config.disabledRules.length === 1, JSON.stringify(saved.json.config.disabledRules))
 check('空白自定义规则被剔除', saved.json.config.customRules.length === 2, JSON.stringify(saved.json.config.customRules))
 
 const onDisk = JSON.parse(fs.readFileSync(process.env.STARLIGHT_CONFIG_FILE, 'utf8'))
 check('落盘文件含 updatedAt', typeof onDisk.updatedAt === 'string')
-check('落盘文件 style 正确', onDisk.style === 'engineering', onDisk.style)
+check('落盘文件含新字段', onDisk.verbosity === 'detailed' && onDisk.lens === 'engineering', JSON.stringify([onDisk.verbosity, onDisk.lens]))
 check('落盘文件为合法 JSON 且换行结尾', fs.readFileSync(process.env.STARLIGHT_CONFIG_FILE, 'utf8').endsWith('\n'))
 
 const reread = await call({ path: '/dsh-starlight/manifest' })
-check('重新读取生效', reread.json.config.style === 'engineering')
+check('重新读取生效', reread.json.config.verbosity === 'detailed')
 
 const reset = await call({ path: '/dsh-starlight/reset', method: 'POST', body: {} })
-check('重置回默认', reset.json.config.style === 'auto' && reset.json.config.customRules.length === 0)
+check('重置回默认', reset.json.config.verbosity === 'standard' && reset.json.config.lens === 'auto' && reset.json.config.customRules.length === 0)
 
 // 损坏文件不应炸掉
 fs.writeFileSync(process.env.STARLIGHT_CONFIG_FILE, '{ this is not json')
 const broken = await call({ path: '/dsh-starlight/manifest' })
-check('损坏配置回落默认值', broken.status === 200 && broken.json.config.style === 'auto', String(broken.status))
+check('损坏配置回落默认值', broken.status === 200 && broken.json.config.verbosity === 'standard', String(broken.status))
 
 /* ------------------------------------------------------------------ */
 /* 5. optimize                                                         */

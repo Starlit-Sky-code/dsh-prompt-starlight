@@ -8,12 +8,12 @@
 
 <p align="center">
   <img alt="license AGPL-3.0" src="https://img.shields.io/badge/license-AGPL--3.0-ff9d32" />
-  <img alt="version" src="https://img.shields.io/badge/version-0.3.0-4d6bfe" />
-  <img alt="tests" src="https://img.shields.io/badge/tests-217%20passing-2f9e44" />
+  <img alt="version" src="https://img.shields.io/badge/version-0.4.0-4d6bfe" />
+  <img alt="tests" src="https://img.shields.io/badge/tests-249%20passing-2f9e44" />
   <img alt="DSH" src="https://img.shields.io/badge/DSH-0.2.0--rc.2-8a8f98" />
 </p>
 
-A **circular four-pointed-star** button on the **left** of the DSH composer toolbar, wearing a hairline ring and soft glow so it lifts off the toolbar. One click turns your draft into a clearer, more complete, more executable prompt. Every rule, style, language and change budget is **editable**, and there is a **dedicated settings page** (Settings → Starlight).
+A **circular four-pointed-star** button on the **left** of the DSH composer toolbar, wearing a hairline ring and soft glow so it lifts off the toolbar. One click turns your draft into a clearer, more complete, more executable prompt. Every rule, slider and model is **editable**, and there is a **dedicated settings page** (Settings → Starlight).
 
 > A standalone plugin. No DSH source edits, no `index.html` injection, two official slot seats.
 
@@ -35,8 +35,8 @@ A **circular four-pointed-star** button on the **left** of the DSH composer tool
 | ✦ One click | Read the draft → rewrite with the rule set → atomic write-back, caret returned to the editor |
 | ✦ Editable rules | 11 built-in rules grouped as *structure / expression quality / fidelity guards*, each toggleable, with per-group counters and all-on / all-off |
 | ✦ Custom rules | One per line; they outrank the built-in rules |
-| ✦ 7 styles | Auto / concise / standard / detailed / engineering / writing / analysis — the selected option's explanation shows underneath |
-| ✦ 3 change budgets | Light / balanced / strong — controls *how much changes*, not how long the result is |
+| 🎚 **Slider-first** | **Strength** (5 stops: minimal → light → balanced → strong → rebuild) and **Detail** (3 stops) are sliders with real stops, not three values padded into five |
+| ✦ Scenario | General / engineering / writing / analysis, folded under “More” |
 | ✦ Output language | Follow the draft / force Chinese / force English |
 | 🎛 **Model switching** | Pick any model the host advertises (`provider · friendly name`), or keep the default "follow the session model". Affects only Starlight's side call, never your session model |
 | ⚙ **Settings page** | **Settings → Starlight**: switch, shape, all 11 rules, custom rules, model, temperature / token cap / timeout — in one place |
@@ -46,6 +46,18 @@ A **circular four-pointed-star** button on the **left** of the DSH composer tool
 | 🖱 Right-click / long-press | Opens the compact rules popover (520 ms for touch); the settings page has everything else |
 
 **It never** sends messages, creates turns, writes to the session log, or touches other plugins' settings.
+
+### What it looks like
+
+Popover (right-click / long-press) — four controls by default, everything else folded into “More”:
+
+<img src="docs/screenshots/popover.png" width="380" alt="Starlight popover" />
+
+Settings page (Settings → Starlight) — model first, then the two sliders, the rest collapsed:
+
+<img src="docs/screenshots/settings.png" width="620" alt="Starlight settings page" />
+
+> Both are rendered from the **real components** by `node tools/make-shots.mjs` (jsdom + React + headless Edge), not hand-drawn mockups — they cannot drift from the shipped UI.
 
 ### Interface details
 
@@ -102,7 +114,7 @@ JSON with `providers` = host half alive. JavaScript = the browser half made it i
 | **Settings → Starlight** | Open the dedicated settings page (everything, plus advanced fields) |
 | `Ctrl/⌘ + Shift + O` | Optimize while the editor is focused |
 
-Popover and settings-page edits both apply on **Save** and share one config document. **Restore defaults** resets every rule, style, language, budget and model override.
+Popover and settings-page edits both apply on **Save** and share one config document. **Restore defaults** resets every rule, slider and model override.
 
 ### What the settings page holds
 
@@ -111,11 +123,11 @@ Navigation id: `starlight`.
 | Section | Contents |
 |---|---|
 | Switch | Master switch; off ⇒ the button only tidies formatting and never calls a model |
-| Rewrite shape | Style (7) / change budget (3) / output language (3), each with the selected option's explanation underneath |
-| Built-in rules | 11 checkboxes grouped as structure / expression quality / fidelity guards, with per-group counters and all-on / all-off |
-| Custom rules | Multi-line textarea, one rule per line |
-| Optimizer model | Dropdown to switch models (`Follow the session model` or any advertised model), with `⟳` to re-read the catalog; shows the session model and any provider that failed |
-| Advanced | `maxTokens`, `temperature`, `timeoutMs` |
+| Rewrite force | **Strength** (5-stop slider) + **Detail** (3-stop slider) + language (3 segments); the current stop's explanation sits under each slider |
+| Rules | Folded by default: scenario chips, 11 grouped checkboxes with per-group counters, all-on / all-off, master switch |
+| Custom rules | Folded: multi-line textarea, one rule per line |
+| Model (first) | Dropdown to switch models (`Follow the session model` or any advertised model), with `⟳` to re-read the catalog |
+| Advanced | Folded: `maxTokens` / `temperature` / `timeoutMs` as sliders, plus the config-file path |
 | Config file | Absolute path of the config document; a clear reason plus **Retry** when the host is unreachable |
 
 The footer shows `Unsaved changes` (amber) / `Saved` / `In sync with disk`, with **Restore defaults** and **Save** (disabled while clean).
@@ -137,7 +149,8 @@ Config file: `$DSH_HOME/starlight-prompt.json` (created on first save; safe to h
 {
   "version": 1,
   "enabled": true,
-  "style": "auto",
+  "verbosity": "standard",
+  "lens": "auto",
   "locale": "auto",
   "depth": "balanced",
   "disabledRules": ["assumptions"],
@@ -206,9 +219,9 @@ STARLIGHT_TRUSTED_HOSTS=192.168.1.9:19387,my-box.local
 ## Development
 
 ```powershell
-node tools/test-package.mjs   # package shape: 48 checks
-node tools/test-host.mjs      # host: 79 checks
-node tools/test-client.mjs    # browser: 90 checks
+node tools/test-package.mjs   # package shape & signatures: 67 checks
+node tools/test-host.mjs      # host: 86 checks
+node tools/test-client.mjs    # browser: 96 checks
 ```
 
 `test-client.mjs` needs real React and jsdom, installed only under `tools/fixture`:
@@ -227,6 +240,14 @@ npm run preview   # = node tools/make-preview.mjs && node tools/check-preview.mj
 Writes `tools/preview.html` — just open it. It is not a hand-drawn mock: the script mounts the **real components** (button, right-click popover, settings page) in jsdom with real React, then lifts the injected stylesheet and the rendered `outerHTML` into one page. So the preview cannot drift from what ships. It covers the toolbar position, five button states, a 3× zoom of the ring, the popover and the settings page, in light and dark themes.
 
 `tools/check-preview.mjs` asserts the preview really contains those pieces, so it can't silently degrade into an empty shell.
+
+### Regenerate the README screenshots
+
+```powershell
+node tools/make-shots.mjs   # writes docs/screenshots/{popover,settings}{,.zh}.png
+```
+
+Also renders the real components, then screenshots them with the local Edge/Chrome in headless mode — one set per locale.
 
 `tools/asar-list.mjs` lists or unpacks DSH's `app.asar` for debugging.
 

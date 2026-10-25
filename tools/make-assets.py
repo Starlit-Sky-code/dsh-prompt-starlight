@@ -71,9 +71,11 @@ def main() -> None:
     accent_hex = "#%02x%02x%02x" % accent
     print(f"取样强调色: {accent_hex} {accent}")
 
-    # —— 图标：原尺寸 + 2 倍图 ——
+    # —— 图标：原尺寸 + 2 倍图 + 插件内 UI 用小图 ——
     src.save(ASSETS / "icon.png", "PNG")
     src.resize((640, 640), Image.LANCZOS).save(ASSETS / "icon-640.png", "PNG")
+    # 插件界面里最大只显示 40px，96px 足够 2x，体积压到十几 KB
+    src.resize((96, 96), Image.LANCZOS).save(ASSETS / "icon-ui.png", "PNG", optimize=True)
 
     # —— 社交预览 1280×640 ——
     W, H = 1280, 640

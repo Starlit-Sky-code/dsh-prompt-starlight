@@ -117,17 +117,23 @@ async function renderReal() {
       { id: 'quality', label: { zh: '表达质量', en: 'Expression quality' }, note: { zh: '决定读起来有多清楚', en: 'How clear it reads' } },
       { id: 'guard', label: { zh: '保真护栏', en: 'Fidelity guards' }, note: { zh: '防止改写跑偏', en: 'Keeps rewrites honest' } },
     ],
-    styles: [
-      { id: 'auto', label: { zh: '自动', en: 'Auto' }, note: { zh: '由模型判断草稿适合的形态', en: 'Let the model pick' } },
+    verbosities: [
       { id: 'concise', label: { zh: '精简', en: 'Concise' }, note: { zh: '最短篇幅', en: 'Shortest form' } },
       { id: 'standard', label: { zh: '标准', en: 'Standard' }, note: { zh: '目标/要求/输出/约束', en: 'Goal/requirements/output' } },
       { id: 'detailed', label: { zh: '详尽', en: 'Detailed' }, note: { zh: '补充边界与验证', en: 'Add edge cases' } },
+    ],
+    lenses: [
+      { id: 'auto', label: { zh: '通用', en: 'General' }, note: { zh: '由模型判断形态', en: 'Let the model pick' } },
       { id: 'engineering', label: { zh: '工程', en: 'Engineering' }, note: { zh: '面向代码/系统任务', en: 'For code tasks' } },
+      { id: 'writing', label: { zh: '写作', en: 'Writing' }, note: { zh: '面向文案/文章', en: 'For copy and prose' } },
+      { id: 'analysis', label: { zh: '分析', en: 'Analysis' }, note: { zh: '面向研究/评估', en: 'For research' } },
     ],
     depths: [
-      { id: 'light', label: { zh: '轻改', en: 'Light' }, note: { zh: '只修病句与结构', en: 'Fix wording' } },
+      { id: 'minimal', label: { zh: '最小', en: 'Minimal' }, note: { zh: '只改错，措辞不动', en: 'Fix errors only' } },
+      { id: 'light', label: { zh: '轻改', en: 'Light' }, note: { zh: '顺语句、补结构', en: 'Tidy up' } },
       { id: 'balanced', label: { zh: '均衡', en: 'Balanced' }, note: { zh: '篇幅与原稿相当', en: 'Similar length' } },
       { id: 'strong', label: { zh: '重写', en: 'Strong' }, note: { zh: '可明显变长', en: 'May grow' } },
+      { id: 'rewrite', label: { zh: '重构', en: 'Rebuild' }, note: { zh: '推倒重写成新提示词', en: 'Build anew' } },
     ],
     locales: [
       { id: 'auto', label: { zh: '跟随原文', en: 'Follow draft' }, note: { zh: '中文进中文出', en: 'Same language' } },
@@ -136,7 +142,8 @@ async function renderReal() {
     ],
     config: {
       enabled: true,
-      style: 'auto',
+      verbosity: 'standard',
+      lens: 'auto',
       locale: 'auto',
       depth: 'balanced',
       disabledRules: ['assumptions'],
