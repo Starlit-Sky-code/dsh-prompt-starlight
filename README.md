@@ -8,12 +8,14 @@
 
 <p align="center">
   <img alt="license AGPL-3.0" src="https://img.shields.io/badge/license-AGPL--3.0-ff9d32" />
-  <img alt="version" src="https://img.shields.io/badge/version-0.4.0-4d6bfe" />
-  <img alt="tests" src="https://img.shields.io/badge/tests-249%20passing-2f9e44" />
+  <img alt="version" src="https://img.shields.io/badge/version-0.4.1-4d6bfe" />
+  <img alt="tests" src="https://img.shields.io/badge/tests-299%20passing-2f9e44" />
   <img alt="DSH" src="https://img.shields.io/badge/DSH-0.2.0--rc.2-8a8f98" />
 </p>
 
-A **circular four-pointed-star** button on the **left** of the DSH composer toolbar, wearing a hairline ring and soft glow so it lifts off the toolbar. One click turns your draft into a clearer, more complete, more executable prompt. Every rule, slider and model is **editable**, and there is a **dedicated settings page** (Settings → Starlight).
+A **circular four-pointed-star** button on the **left** of the DSH composer, wearing a hairline ring and soft glow so it lifts off the toolbar. One click turns your draft into a clearer, more complete, more executable prompt.
+
+Model, strength, detail, language and rules are all editable, each in its own place: the **model comes first**, **strength and detail are two sliders**, and the 11 built-in rules toggle individually — custom rules on top. All of it lives on a **dedicated settings page** (Settings → Starlight), while the popover keeps only the four controls you reach for.
 
 > A standalone plugin. No DSH source edits, no `index.html` injection, two official slot seats.
 
@@ -110,7 +112,7 @@ dsh plugin add "git+https://github.com/Starlit-Sky-code/dsh-prompt-starlight.git
 Every version ships a packed tgz, so installing needs neither a local pnpm build nor a build-authorisation prompt:
 
 ```powershell
-dsh plugin add "https://github.com/Starlit-Sky-code/dsh-prompt-starlight/releases/download/v0.4.0/dsh-prompt-starlight-0.4.0.tgz"
+dsh plugin add "https://github.com/Starlit-Sky-code/dsh-prompt-starlight/releases/download/v0.4.1/dsh-prompt-starlight-0.4.1.tgz"
 ```
 
 > The asset name carries the version, so the URL pins the `v0.4.0` tag; bump both when you upgrade.

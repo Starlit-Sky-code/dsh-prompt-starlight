@@ -8,13 +8,14 @@
 
 <p align="center">
   <img alt="license AGPL-3.0" src="https://img.shields.io/badge/license-AGPL--3.0-ff9d32" />
-  <img alt="version" src="https://img.shields.io/badge/version-0.4.0-4d6bfe" />
-  <img alt="tests" src="https://img.shields.io/badge/tests-249%20passing-2f9e44" />
+  <img alt="version" src="https://img.shields.io/badge/version-0.4.1-4d6bfe" />
+  <img alt="tests" src="https://img.shields.io/badge/tests-299%20passing-2f9e44" />
   <img alt="DSH" src="https://img.shields.io/badge/DSH-0.2.0--rc.2-8a8f98" />
 </p>
 
-DSH 输入框工具行**左侧**的**圆形四角星**按钮（自带一圈描边光晕，从工具行里浮出来）：点一下，把草稿改写成一份更清晰、更完整、更可执行的提示词。
-优化规则、强度、详细度、语言、模型**全部可自定义**——内置规则可逐条开关，也可以追加自己的规则，并且有**独立设置页**（设置 → 星芒提示词）。
+DSH 输入框工具行**左侧**的**圆形四角星**按钮，自带一圈描边光晕，从工具行里浮出来：点一下，把草稿改写成更清晰、更完整、更可执行的提示词。
+
+模型、强度、详细度、语言、规则**都能调**，而且各归其位：**模型排第一**，**强度与详细度各一根滑块**，11 条内置规则可逐项开关，还能追加自己的规则。全部收在**独立设置页**（设置 → 星芒提示词）里，浮层只留最常用的四个控件。
 
 > 独立插件，不改 DSH 源码，不注入 `index.html`，只占两个官方槽位席位。
 
@@ -113,7 +114,7 @@ dsh plugin add "git+https://github.com/Starlit-Sky-code/dsh-prompt-starlight.git
 每个版本都挂了一个预打包的 tgz，安装时不需要 pnpm 现场构建、也不会弹「构建授权」：
 
 ```powershell
-dsh plugin add "https://github.com/Starlit-Sky-code/dsh-prompt-starlight/releases/download/v0.4.0/dsh-prompt-starlight-0.4.0.tgz"
+dsh plugin add "https://github.com/Starlit-Sky-code/dsh-prompt-starlight/releases/download/v0.4.1/dsh-prompt-starlight-0.4.1.tgz"
 ```
 
 > 资产名带版本号，所以 URL 钉住 `v0.4.0`。升级时改 URL 里的 tag 与文件名两处。

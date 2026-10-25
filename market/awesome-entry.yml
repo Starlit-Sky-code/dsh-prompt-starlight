@@ -15,13 +15,13 @@
 #
 # 已挂 GitHub Release tarball（资产名带版本号，所以钉住 v0.4.0 这个 tag；
 # 这样安装时免掉 pnpm 的构建授权步骤，也不必等 npm 解冻）：
-#   https://github.com/Starlit-Sky-code/dsh-prompt-starlight/releases/download/v0.4.0/dsh-prompt-starlight-0.4.0.tgz
+#   https://github.com/Starlit-Sky-code/dsh-prompt-starlight/releases/download/v0.4.1/dsh-prompt-starlight-0.4.1.tgz
 
 url: https://github.com/Starlit-Sky-code/dsh-prompt-starlight
 name: Starlit-Sky-code/dsh-prompt-starlight
 category: ui
 description:
-  en: Adds a star button to the left of the composer that rewrites the draft into a more structured prompt, with two sliders for rewrite strength and detail, a model switcher, and 11 built-in rules that can be toggled.
-  zh: 在输入框工具行左侧加一个四角星按钮，一键把草稿改写成更有结构的提示词；提供强度与详细度两根滑块、模型切换，以及 11 条可开关的内置规则。
+  en: Rewrites the composer draft into a clearer, executable prompt in one click: strength and detail sliders, switchable model, 11 toggleable rules.
+  zh: 一键把草稿改写成更清晰、可直接执行的提示词。强度与详细度各一根滑块，模型可切换，11 条内置规则可逐项开关。
 icon: https://raw.githubusercontent.com/Starlit-Sky-code/dsh-prompt-starlight/main/assets/icon-180.png
-tarball: https://github.com/Starlit-Sky-code/dsh-prompt-starlight/releases/download/v0.4.0/dsh-prompt-starlight-0.4.0.tgz
+tarball: https://github.com/Starlit-Sky-code/dsh-prompt-starlight/releases/download/v0.4.1/dsh-prompt-starlight-0.4.1.tgz

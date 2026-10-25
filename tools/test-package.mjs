@@ -81,6 +81,43 @@ check(
   JSON.stringify(pkg.publishConfig),
 )
 check('未把 private 设为 true（否则无法发布）', pkg.private !== true)
+
+console.log('\n[2b] 插件卡片元数据（宿主 readPluginMeta 规则）')
+
+// 面板卡片上的图标来自 package.json.icon，宿主会校验并内联成 data URL。
+// 规则：相对路径、留在清单目录内、扩展名 svg/png/jpeg/webp、≤256 KiB、普通文件。
+const ICON_EXT = ['.svg', '.png', '.jpg', '.jpeg', '.webp']
+check('声明了 icon 字段', typeof pkg.icon === 'string' && pkg.icon !== '', JSON.stringify(pkg.icon))
+check('icon 是相对路径（data: 会被宿主协议正则拒绝）', typeof pkg.icon === 'string' && !/^[A-Za-z][A-Za-z\d+.-]*:/.test(pkg.icon) && !pkg.icon.startsWith('/'))
+check('icon 扩展名可用', ICON_EXT.includes(path.extname(String(pkg.icon)).toLowerCase()), String(pkg.icon))
+check('icon 文件存在', exists(String(pkg.icon)) && fs.statSync(path.join(root, String(pkg.icon))).isFile())
+check('icon 不超过 256 KiB', exists(String(pkg.icon)) && fs.statSync(path.join(root, String(pkg.icon))).size <= 256 * 1024, String(fs.existsSync(path.join(root, String(pkg.icon))) ? fs.statSync(path.join(root, String(pkg.icon))).size : -1))
+check('files[] 包含 icon（否则安装后缺文件）', Array.isArray(pkg.files) && pkg.files.includes(String(pkg.icon)))
+
+// 标题与描述的本地化走 <包名>/locale/<lang>.json，且必须被 exports 放行。
+check('exports 放行 ./locale/*', pkg.exports?.['./locale/*'] === './locale/*', JSON.stringify(pkg.exports?.['./locale/*'] ?? null))
+check('files[] 包含 locale', Array.isArray(pkg.files) && pkg.files.includes('locale'))
+check('存在 locale/en.json（宿主以它为锚点）', exists('locale/en.json'))
+check('存在 locale/zh.json', exists('locale/zh.json'))
+
+for (const language of ['en', 'zh']) {
+  const file = `locale/${language}.json`
+  if (!exists(file)) continue
+  let parsed = null
+  try {
+    parsed = JSON.parse(read(file))
+  } catch {}
+  check(`${file} 可解析且有 meta 对象`, parsed !== null && typeof parsed.meta === 'object' && parsed.meta !== null)
+  check(`${file} 的 meta.title 是非空字符串`, typeof parsed?.meta?.title === 'string' && parsed.meta.title.trim() !== '')
+  check(`${file} 的 meta.description 是非空字符串`, typeof parsed?.meta?.description === 'string' && parsed.meta.description.trim() !== '')
+  check(`${file} 的描述不超过 200 字符（卡片会截断）`, String(parsed?.meta?.description ?? '').length <= 200, String(String(parsed?.meta?.description ?? '').length))
+}
+
+// 描述必须如实：不能写已经不存在的 3 档强度 / 7 档风格
+const zhDescription = exists('locale/zh.json') ? JSON.parse(read('locale/zh.json')).meta.description : ''
+check('描述不再宣称旧的「风格」体系', !/7 档风格|七档风格/.test(zhDescription), zhDescription.slice(0, 30))
+check('描述的规则数量与实现一致（11 条）', zhDescription.includes('11 条') && read('lib/rules.js').includes('RULE_CATALOG'))
+check('描述提到的滑块在实现里存在', /滑块/.test(zhDescription) && read('lib/client.js').includes('dshsl-range'))
 check(
   '没有指向 GitHub Packages 的 registry 残留',
   !JSON.stringify(pkg).includes('npm.pkg.github.com'),

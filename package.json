@@ -1,7 +1,7 @@
 {
   "name": "dsh-prompt-starlight",
-  "version": "0.4.0",
-  "description": "星芒 · DSH 提示词一键优化插件：输入框工具行左侧的四角星按钮（带外圈光环），一键把草稿改写成高质量提示词；规则、风格、语言、优化模型全部可自定义，并带独立设置页（设置 → 星芒提示词）",
+  "version": "0.4.1",
+  "description": "Rewrites the composer draft into a clearer, executable prompt in one click: strength and detail sliders, switchable model, 11 toggleable rules.",
   "keywords": [
     "dsh",
     "dsh-plugin",
@@ -20,7 +20,8 @@
     "./client": {
       "default": "./lib/client.js"
     },
-    "./package.json": "./package.json"
+    "./package.json": "./package.json",
+    "./locale/*": "./locale/*"
   },
   "files": [
     "lib",
@@ -32,7 +33,8 @@
     "assets/icon.png",
     "assets/icon-ui.png",
     "docs/screenshots",
-    "market/index.json"
+    "market/index.json",
+    "locale"
   ],
   "scripts": {
     "test": "node tools/test-package.mjs && node tools/test-host.mjs && node tools/test-client.mjs",
@@ -80,5 +82,6 @@
     "registry": "https://registry.npmjs.org/",
     "access": "public"
   },
-  "license": "AGPL-3.0-only"
+  "license": "AGPL-3.0-only",
+  "icon": "assets/icon.png"
 }
