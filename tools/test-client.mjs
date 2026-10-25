@@ -436,6 +436,29 @@ check('选中后列表收起', panel.querySelector('.dshsl-picker-list') === nul
 check('选中后选择行显示新值', /DeepSeek/.test(panel.querySelector('.dshsl-picker-row').textContent), panel.querySelector('.dshsl-picker-row').textContent)
 check('浮层头部带插件图标', panel.querySelector('.dshsl-head img.dshsl-icon') !== null)
 
+// 齿轮：DSH 没有「打开设置页」的接口，所以这里就地展开设置页的内容。
+check('头部有齿轮按钮', panel.querySelectorAll('.dshsl-head .dshsl-x').length === 2, String(panel.querySelectorAll('.dshsl-head .dshsl-x').length))
+check('齿轮有说明与按下态语义', panel.querySelector('.dshsl-head .dshsl-x').getAttribute('aria-pressed') === 'false')
+check('默认是常用视图（标题不含「全部设置」）', !/全部设置|all settings/.test(panel.querySelector('.dshsl-title').textContent))
+
+const gear = panel.querySelector('.dshsl-head .dshsl-x')
+await act(async () => {
+  gear.dispatchEvent(new dom.window.MouseEvent('click', { bubbles: true }))
+})
+check('齿轮切换后标题变为「全部设置」', /全部设置|all settings/.test(panel.querySelector('.dshsl-title').textContent), panel.querySelector('.dshsl-title').textContent)
+check('齿轮进入按下态', panel.querySelector('.dshsl-head .dshsl-x').getAttribute('aria-pressed') === 'true')
+const fullRanges = Array.from(panel.querySelectorAll('.dshsl-body .dshsl-range'))
+check('全部设置是常用视图的超集（5 根滑块）', fullRanges.length === 5, String(fullRanges.length))
+check('全部设置里有模型选择行', panel.querySelector('.dshsl-body .dshsl-picker-row') !== null)
+check('全部设置里有规则勾选', panel.querySelectorAll('.dshsl-rule input[type=checkbox]').length >= 4, String(panel.querySelectorAll('.dshsl-rule input[type=checkbox]').length))
+check('全部设置里说明了为什么不是跳转', /同一份配置|share one config/.test(panel.querySelector('.dshsl-body').textContent), panel.querySelector('.dshsl-body').textContent.slice(-80))
+
+await act(async () => {
+  panel.querySelector('.dshsl-head .dshsl-x').dispatchEvent(new dom.window.MouseEvent('click', { bubbles: true }))
+})
+check('再点一次回到常用视图', !/全部设置|all settings/.test(panel.querySelector('.dshsl-title').textContent))
+check('常用视图仍是 2 根滑块', panel.querySelectorAll('.dshsl-body .dshsl-range').length === 2, String(panel.querySelectorAll('.dshsl-body .dshsl-range').length))
+
 // 两根滑块
 const ranges = Array.from(panel.querySelectorAll('.dshsl-body .dshsl-range'))
 check('浮层有两根滑块', ranges.length === 2, String(ranges.length))

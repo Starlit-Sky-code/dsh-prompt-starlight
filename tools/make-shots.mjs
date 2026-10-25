@@ -198,6 +198,7 @@ async function renderReal(locale) {
   let popHtml = ''
   let popHtmlOpen = ''
   let popHtmlMore = ''
+  let popHtmlFull = ''
   const panel = dom.window.document.querySelector('.dshsl-panel')
   if (panel !== null) {
     panel.removeAttribute('style')
@@ -230,6 +231,19 @@ async function renderReal(locale) {
         await new Promise((resolve) => setTimeout(resolve, 220))
       })
       popHtmlMore = panel.outerHTML
+      await act(async () => {
+        moreHead.dispatchEvent(new dom.window.MouseEvent('click', { bubbles: true }))
+      })
+    }
+    const gear = panel.querySelector('.dshsl-head .dshsl-x')
+    if (gear !== null) {
+      await act(async () => {
+        gear.dispatchEvent(new dom.window.MouseEvent('click', { bubbles: true }))
+      })
+      await act(async () => {
+        await new Promise((resolve) => setTimeout(resolve, 220))
+      })
+      popHtmlFull = panel.outerHTML
     }
   }
   await act(async () => {
@@ -265,7 +279,7 @@ async function renderReal(locale) {
   const styleTag = dom.window.document.head.querySelector('style[data-plugin-css]')
   const css = styleTag === null ? '' : styleTag.textContent
   dom.window.close()
-  return { css, popHtml, popHtmlOpen, popHtmlMore, pageHtml }
+  return { css, popHtml, popHtmlOpen, popHtmlMore, popHtmlFull, pageHtml }
 }
 
 /** 把图标换成 data URI，file:// 页面才不会破图。 */
@@ -342,6 +356,14 @@ for (const locale of ['zh', 'en']) {
     const morePng = path.join(outDir, `popover-more${suffix}.png`)
     shot(browser, morePage, morePng, 440, 1000)
     written.push(morePng)
+  }
+
+  if (rendered.popHtmlFull !== '') {
+    const fullPage = path.join(work, `popover-full${suffix}.html`)
+    fs.writeFileSync(fullPage, mkPage(rendered.popHtmlFull, 400, rendered.css, locale === 'zh' ? 'zh-CN' : 'en'), 'utf8')
+    const fullPng = path.join(outDir, `popover-full${suffix}.png`)
+    shot(browser, fullPage, fullPng, 440, 1200)
+    written.push(fullPng)
   }
 
   const pagePage = path.join(work, `settings${suffix}.html`)
