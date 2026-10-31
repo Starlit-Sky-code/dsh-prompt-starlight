@@ -59,7 +59,7 @@ Model list expanded (the same row + chevron as DSH's native picker, no OS dropdo
 
 <img src="docs/screenshots/popover-open.png" width="380" alt="Model list" />
 
-"More" expanded — rule titles only, two columns, custom rules folded one level deeper:
+"More" expanded — only the scenario switch and the master toggle; rules, custom rules and advanced live in the settings window:
 
 <img src="docs/screenshots/popover-more.png" width="380" alt="More section" />
 

@@ -60,7 +60,7 @@ DSH 输入框工具行**左侧**的**圆形四角星**按钮，自带一圈描�
 
 <img src="docs/screenshots/popover-open.zh.png" width="380" alt="模型列表" />
 
-「更多设置」展开——规则只留标题、两列排布，自定义规则再收一层：
+「更多设置」展开——只剩场景与总开关；规则、自定义规则、高级都在设置窗口里：
 
 <img src="docs/screenshots/popover-more.zh.png" width="380" alt="更多设置" />
 

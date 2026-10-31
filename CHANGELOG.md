@@ -20,6 +20,9 @@ Chinese version: [CHANGELOG.zh-CN.md](CHANGELOG.zh-CN.md).
   - Still read-only: it installs nothing and writes no files; the footer just says the market is a read-only view.
   - Served through a host proxy, `GET /dsh-starlight/market`: it accepts only credential-free https URLs without query or fragment, refuses redirects, times out at 10s, caps at 2 MiB, checks the format and whitelists fields; the same index is cached for 60s.
 
+- **A slimmer popover**: rules, custom rules and advanced parameters now live only in the settings window (the gear); expanding the popover leaves the scenario switch and the master toggle, plus a line saying where the rest went. The same set used to appear three times — popover, settings window, settings page — and the popover copy only made the panel taller.
+- **A Tab trap for the settings window**: inside the modal, Tab and Shift+Tab wrap at both ends instead of escaping to the page behind it; closing still returns focus to the gear.
+
 ### Fixed
 
 - The model note was clipped by the picker's rounded container.

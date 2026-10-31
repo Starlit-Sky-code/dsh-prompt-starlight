@@ -238,7 +238,10 @@ check(
   '规则列数按容器决定（不再有按视口的 media 查询）',
   client.includes("'data-columns': props.columns === 2") && !client.includes('@media (min-width:560px){.dshsl-rules-grid'),
 )
-check('浮层里规则用紧凑形态（只留标题）', client.includes('compact: true') && client.includes('data-compact'))
+check(
+  '浮层不再渲染规则列表（已移到设置窗口）',
+  !/compact: true[\s\S]{0,80}columns: 2/.test(client) && client.includes('规则、自定义规则与高级参数在设置窗口里'),
+)
 check('浮层里的自定义规则是二级折叠', client.includes("title: t('自定义规则', 'Custom rules')"))
 check(
   '截图有量化步骤（控制包体）',

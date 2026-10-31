@@ -416,6 +416,24 @@ check('选择行显示当前值', firstRow !== null && /跟随会话|Follow/.tes
 check('选择行带箭头', firstRow !== null && firstRow.querySelector('.dshsl-picker-caret') !== null)
 check('列表默认收起', panel.querySelector('.dshsl-picker-list') === null)
 
+// 浮层瘦身：规则/自定义规则/高级都移到设置窗口，浮层里不再出现
+await act(async () => {
+  const head = panel.querySelector('.dshsl-more-head')
+  if (head !== null && panel.querySelector('.dshsl-more').getAttribute('data-open') === '0') {
+    head.dispatchEvent(new dom.window.MouseEvent('click', { bubbles: true }))
+  }
+})
+await tick()
+check('浮层只剩总开关一个勾选框（11 条规则已移到设置窗口）', panel.querySelectorAll('.dshsl-rule input[type=checkbox]').length === 1, String(panel.querySelectorAll('.dshsl-rule input[type=checkbox]').length))
+check('浮层保留「场景」切换', /场景|Scenario/.test(panel.textContent))
+check('浮层指出去设置窗口看规则', /设置窗口|settings window/.test(panel.textContent))
+check('浮层保留总开关', /启用星芒按钮|Enable the starlight button/.test(panel.textContent))
+await act(async () => {
+  const head = panel.querySelector('.dshsl-more-head')
+  if (head !== null) head.dispatchEvent(new dom.window.MouseEvent('click', { bubbles: true }))
+})
+await tick()
+
 await act(async () => {
   firstRow.querySelector('.dshsl-picker-row').dispatchEvent(new dom.window.MouseEvent('click', { bubbles: true }))
 })
@@ -466,6 +484,21 @@ check('窗口注明与设置页同一份配置', /同一份配置|share one conf
 
 // 浮层还在（窗口是叠在它上面的独立层）
 check('窗口打开时浮层仍在', dom.window.document.querySelector('.dshsl-panel') !== null)
+
+// Tab 陷阱：从最后一个可聚焦元素按 Tab 应回到第一个，而不是跑出窗口
+const dialogPanel = dom.window.document.querySelector('.dshsl-dialog-panel')
+const focusables = Array.from(dialogPanel.querySelectorAll('button, input, select, textarea, a[href]')).filter((node) => node.disabled !== true)
+check('窗口里有可聚焦元素', focusables.length > 3, String(focusables.length))
+const lastFocusable = focusables[focusables.length - 1]
+lastFocusable.focus()
+await act(async () => {
+  dom.window.document.dispatchEvent(new dom.window.KeyboardEvent('keydown', { key: 'Tab', bubbles: true }))
+})
+check('末尾按 Tab 回到窗口内第一个元素', dom.window.document.activeElement === focusables[0], dom.window.document.activeElement && dom.window.document.activeElement.className)
+await act(async () => {
+  dom.window.document.dispatchEvent(new dom.window.KeyboardEvent('keydown', { key: 'Tab', shiftKey: true, bubbles: true }))
+})
+check('开头按 Shift+Tab 回到窗口内最后一个元素', dom.window.document.activeElement === lastFocusable, dom.window.document.activeElement && dom.window.document.activeElement.className)
 
 // 在窗口里改一条规则，保存按钮应可用
 await act(async () => {
