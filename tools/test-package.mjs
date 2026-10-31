@@ -239,8 +239,8 @@ check(
   client.includes("'data-columns': props.columns === 2") && !client.includes('@media (min-width:560px){.dshsl-rules-grid'),
 )
 check(
-  '浮层不再渲染规则列表（已移到设置窗口）',
-  !/compact: true[\s\S]{0,80}columns: 2/.test(client) && client.includes('规则、自定义规则与高级参数在设置窗口里'),
+  '浮层不再渲染规则列表（改为一行可点击入口）',
+  !/compact: true[\s\S]{0,80}columns: 2/.test(client) && client.includes('dshsl-link-row'),
 )
 check('浮层里的自定义规则是二级折叠', client.includes("title: t('自定义规则', 'Custom rules')"))
 check(

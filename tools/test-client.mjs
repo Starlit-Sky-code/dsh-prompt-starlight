@@ -426,7 +426,22 @@ await act(async () => {
 await tick()
 check('浮层只剩总开关一个勾选框（11 条规则已移到设置窗口）', panel.querySelectorAll('.dshsl-rule input[type=checkbox]').length === 1, String(panel.querySelectorAll('.dshsl-rule input[type=checkbox]').length))
 check('浮层保留「场景」切换', /场景|Scenario/.test(panel.textContent))
-check('浮层指出去设置窗口看规则', /设置窗口|settings window/.test(panel.textContent))
+check('浮层有一行入口指向设置窗口', /规则、自定义规则与高级参数|Rules, custom rules/.test(panel.textContent))
+const linkRow = panel.querySelector('.dshsl-link-row')
+check('入口是一颗按钮（可直接打开窗口）', linkRow !== null && linkRow.tagName === 'BUTTON')
+await act(async () => {
+  if (linkRow !== null) linkRow.dispatchEvent(new dom.window.MouseEvent('click', { bubbles: true }))
+})
+await tick()
+check('点入口能直接打开设置窗口', dom.window.document.querySelector('.dshsl-dialog') !== null)
+await act(async () => {
+  const backdrop = dom.window.document.querySelector('.dshsl-dialog-backdrop')
+  if (backdrop !== null) backdrop.dispatchEvent(new dom.window.MouseEvent('click', { bubbles: true }))
+})
+await act(async () => {
+  await new Promise((resolve) => setTimeout(resolve, 40))
+})
+check('关掉窗口后浮层还在', dom.window.document.querySelector('.dshsl-panel') !== null)
 check('浮层保留总开关', /启用星芒按钮|Enable the starlight button/.test(panel.textContent))
 await act(async () => {
   const head = panel.querySelector('.dshsl-more-head')
