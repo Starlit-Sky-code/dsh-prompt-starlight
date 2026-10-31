@@ -495,7 +495,7 @@ check('窗口里有模型选择行', dialog.querySelector('.dshsl-dialog-body .d
 check('窗口里有规则勾选', dialog.querySelectorAll('.dshsl-rule input[type=checkbox]').length >= 4, String(dialog.querySelectorAll('.dshsl-rule input[type=checkbox]').length))
 check('窗口里有保存与恢复默认', dialog.querySelectorAll('.dshsl-page-foot .dshsl-btn2').length === 2, String(dialog.querySelectorAll('.dshsl-page-foot .dshsl-btn2').length))
 check('未改动时保存禁用', dialog.querySelector('.dshsl-page-foot .dshsl-btn2[data-primary="1"]').disabled === true)
-check('窗口注明与设置页同一份配置', /同一份配置|share one config/.test(dialog.textContent))
+check('窗口注明与设置页同一份配置', /同一份配置|same config/i.test(dialog.textContent), dialog.textContent.slice(-80))
 
 // 浮层还在（窗口是叠在它上面的独立层）
 check('窗口打开时浮层仍在', dom.window.document.querySelector('.dshsl-panel') !== null)
@@ -554,7 +554,7 @@ check('Esc 不会连带关掉浮层', dom.window.document.querySelector('.dshsl-
 /* 5. 独立设置页                                                      */
 /* ------------------------------------------------------------------ */
 
-console.log('\n[5] 设置页：同样的骨架')
+console.log('\n[5] 设置页：与设置窗口同一份内容')
 
 const pageContainer = dom.window.document.createElement('div')
 dom.window.document.body.appendChild(pageContainer)
@@ -586,23 +586,18 @@ await tick()
 
 check('设置页渲染出标题', /星芒提示词优化|Starlight prompt optimizer/.test(pageContainer.textContent))
 check('设置页头部带插件图标', pageContainer.querySelector('.dshsl-hero img.dshsl-icon') !== null)
+check('设置页有两个标签页', pageContainer.querySelectorAll('.dshsl-tab').length === 2, String(pageContainer.querySelectorAll('.dshsl-tab').length))
 
-// 顺序：模型卡片在改写力度卡片之前
-const cards = Array.from(pageContainer.querySelectorAll('.dshsl-card'))
-check('有模型与改写力度两张主卡', cards.length === 2, String(cards.length))
-check('模型是第一张卡', /模型|Model/.test(cards[0].textContent), cards[0] && cards[0].textContent.slice(0, 30))
-check('改写力度是第二张卡', /改写力度|Rewrite force/.test(cards[1].textContent), cards[1] && cards[1].textContent.slice(0, 30))
-
+// 设置页现在直接复用设置窗口那套内容，不再有自己的卡片与折叠
+check('设置页没有独立卡片（与窗口同一份）', pageContainer.querySelectorAll('.dshsl-card').length === 0, String(pageContainer.querySelectorAll('.dshsl-card').length))
+check('设置页没有折叠区（规则等直接铺开）', pageContainer.querySelectorAll('.dshsl-more').length === 0, String(pageContainer.querySelectorAll('.dshsl-more').length))
+check('设置页有模型选择行', pageContainer.querySelector('.dshsl-picker-row') !== null)
 const pageRanges = Array.from(pageContainer.querySelectorAll('.dshsl-range'))
-check('主��面两根滑块', pageRanges.length === 2, String(pageRanges.length))
-check('设置页强度也是 5 档', pageRanges[0] && pageRanges[0].getAttribute('max') === '4')
-check('设置页有 3 个语言选项', pageContainer.querySelectorAll('.dshsl-seg button').length === 3, String(pageContainer.querySelectorAll('.dshsl-seg button').length))
-
-// 折叠区：规则 / 自定义规则 / 高级 / 关于
-const mores = Array.from(pageContainer.querySelectorAll('.dshsl-more'))
-check('四个折叠区', mores.length === 4, String(mores.length))
-check('折叠区默认全收起', mores.every((node) => node.getAttribute('data-open') === '0'))
-check('收起时不渲染规则勾选', pageContainer.querySelectorAll('.dshsl-rule input[type=checkbox]').length === 0)
+check('设置页一次铺开 5 根滑块', pageRanges.length === 5, String(pageRanges.length))
+check('设置页有规则勾选（夹具 3 条 + 总开关）', pageContainer.querySelectorAll('.dshsl-rule input[type=checkbox]').length === 4, String(pageContainer.querySelectorAll('.dshsl-rule input[type=checkbox]').length))
+check('设置页有场景与语言', /场景|Scenario/.test(pageContainer.textContent) && /语言|Language/.test(pageContainer.textContent))
+check('设置页有关于区块', /关于|About/.test(pageContainer.textContent) && /AGPL-3\.0/.test(pageContainer.textContent))
+check('设置页有明显说明文案', /强度 = 改动多少|Strength = how much/.test(pageContainer.textContent), pageContainer.textContent.slice(0, 60))
 
 const pageButtons = () => Array.from(pageContainer.querySelectorAll('.dshsl-page-foot .dshsl-btn2'))
 const pageSaveButton = () => pageButtons().find((node) => /保存|Save/.test(node.textContent))
@@ -610,21 +605,6 @@ const pageStatus = () => pageContainer.querySelector('.dshsl-status')
 
 check('初始状态「与磁盘一致」', /磁盘|disk/i.test(pageStatus().textContent), pageStatus().textContent)
 check('未修改时保存按钮禁用', pageSaveButton().disabled === true)
-
-// 展开「高级」→ 应该出现 3 根数字滑块
-const advancedMore = mores[2]
-await act(async () => {
-  advancedMore.querySelector('.dshsl-more-head').dispatchEvent(new dom.window.MouseEvent('click', { bubbles: true }))
-})
-const allRanges = Array.from(pageContainer.querySelectorAll('.dshsl-range'))
-check('高级展开后共 5 根滑块', allRanges.length === 5, String(allRanges.length))
-check('高级滑块是数字区间', allRanges[2].getAttribute('min') === '256' && allRanges[2].getAttribute('max') === '8000', allRanges[2] && `${allRanges[2].getAttribute('min')}..${allRanges[2].getAttribute('max')}`)
-
-// 展开「规则」→ 勾选框出现
-await act(async () => {
-  mores[0].querySelector('.dshsl-more-head').dispatchEvent(new dom.window.MouseEvent('click', { bubbles: true }))
-})
-check('规则展开后有 4 个勾选框', pageContainer.querySelectorAll('.dshsl-rule input[type=checkbox]').length === 4, String(pageContainer.querySelectorAll('.dshsl-rule input[type=checkbox]').length))
 
 // 调一根滑块 + 取消一条规则，然后保存
 await act(async () => {
@@ -756,7 +736,7 @@ await act(async () => {
 
 check('搜索请求打到 /skills 并带编码后的查询词', String(catalogRequest).includes('/skills?q=prompt'), String(catalogRequest))
 const skillCards = Array.from(marketContainer.querySelectorAll('.dshsl-skill'))
-check('渲染出目录条目', cards.length === 2, String(cards.length))
+check('渲染出目录条目', skillCards.length === 2, String(skillCards.length))
 check('显示名称与作者', skillCards[0].textContent.includes('prompt-harness') && skillCards[0].textContent.includes('someone'), skillCards[0].textContent.slice(0, 60))
 check('显示下载数与官方标', skillCards[0].textContent.includes('4321') && /官方|Official/.test(skillCards[0].textContent), skillCards[0].textContent.slice(0, 60))
 check('展示目录给的安装引用（不自行编造命令）', skillCards[0].querySelector('.dshsl-skill-ref').textContent === 'someone/prompt-harness', skillCards[0].querySelector('.dshsl-skill-ref').textContent)

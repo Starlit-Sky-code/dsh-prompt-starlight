@@ -67,7 +67,7 @@ The gear in the popover opens a **standalone settings window** — the same conf
 
 <img src="docs/screenshots/settings-dialog.png" width="620" alt="Settings window" />
 
-Settings page (Settings → Starlight) — model first, then the two sliders, the rest collapsed:
+Settings page (Settings → Starlight) — the **same content** as the settings window: model first, then sliders, language, scenario, rules, custom rules and advanced:
 
 <img src="docs/screenshots/settings.png" width="620" alt="Starlight settings page" />
 

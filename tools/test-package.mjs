@@ -246,7 +246,7 @@ check(
   '浮层不再渲染规则列表（改为一行可点击入口）',
   !/compact: true[\s\S]{0,80}columns: 2/.test(client) && client.includes('dshsl-link-row'),
 )
-check('浮层里的自定义规则是二级折叠', client.includes("title: t('自定义规则', 'Custom rules')"))
+check('设置页与设置窗口共用同一份内容组件', client.includes('e(FullSettings, {') && (client.match(/e\(FullSettings, \{/g) || []).length >= 2)
 check(
   '截图有量化步骤（控制包体）',
   fs.existsSync('tools/optimize-shots.py') && fs.readFileSync('tools/make-shots.mjs', 'utf8').includes('optimize-shots.py'),
