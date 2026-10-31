@@ -167,25 +167,14 @@ async function renderReal(locale) {
     ],
   }
 
-  const MARKET_FIXTURE = {
-    ok: true,
-    format: 1,
-    title: 'Starlit Sky',
-    index: 'https://example.test/index.json',
-    items: [
-      { name: 'dsh-prompt-starlight', title: '星芒 · 提示词一键优化', description: '把草稿改写成更清晰、可直接执行的提示词。', author: 'Starlit Sky', category: 'prompt', version: '0.4.1', spec: 'git+https://github.com/Starlit-Sky-code/dsh-prompt-starlight.git#5fc353b486f180219ec1371f6051d05e8cd6e752', page: 'https://github.com/Starlit-Sky-code/dsh-prompt-starlight' },
-      { name: 'dsh-side-task', title: '侧边任务', description: '在同一工作区里开一个带独立上下文的临时会话。', author: 'Silentforfar', category: 'session', version: '0.1.1', spec: 'git+https://github.com/Silentforfar/dsh-side-task.git#7500e3ae33a636f388991c6fef4c5ee3f0f17dd9', page: 'https://github.com/Silentforfar/dsh-side-task' },
-      { name: 'dsh-computer-use', title: '桌面控制', description: '窗口截图、UI Automation 树与真实输入动作。', author: 'Silentforfar', category: 'desktop', version: '0.2.0', spec: 'git+https://github.com/Silentforfar/dsh-computer-use.git#a11ce0000000000000000000000000000000beef', page: 'https://github.com/Silentforfar/dsh-computer-use' },
-    ],
-  }
+
 
   globalThis.fetch = async (url) => ({
     ok: true,
     json: async () => {
       const target = String(url)
       if (target.includes('/skills')) return SKILL_FIXTURE
-      if (target.includes('/market')) return MARKET_FIXTURE
-      return target.includes('/models') ? MODELS : MANIFEST
+          return target.includes('/models') ? MODELS : MANIFEST
     },
   })
 
@@ -230,7 +219,6 @@ async function renderReal(locale) {
   let popHtmlOpen = ''
   let popHtmlMore = ''
   let popHtmlFull = ''
-  let pageHtmlPlugins = ''
   const panel = dom.window.document.querySelector('.dshsl-panel')
   if (panel !== null) {
     panel.removeAttribute('style')
@@ -307,22 +295,6 @@ async function renderReal(locale) {
   })
   const pageHtml = stage2.innerHTML
 
-  // 切到第三个标签页：插件市场切过去会自动载入，不需要驱动输入框
-  const settingTabs = stage2.querySelectorAll('.dshsl-tab')
-  if (settingTabs[2] !== undefined) {
-    await act(async () => {
-      stage2.querySelectorAll('.dshsl-tab')[2].dispatchEvent(new dom.window.MouseEvent('click', { bubbles: true }))
-    })
-    await act(async () => {
-      await new Promise((resolve) => setTimeout(resolve, 260))
-    })
-    if (stage2.querySelectorAll('[data-market] .dshsl-skill').length > 0) {
-      pageHtmlPlugins = stage2.innerHTML
-    } else {
-      console.error('[shots] 插件市场截图未拿到条目，跳过')
-    }
-  }
-
   await act(async () => {
     root2.unmount()
   })
@@ -330,7 +302,7 @@ async function renderReal(locale) {
   const styleTag = dom.window.document.head.querySelector('style[data-plugin-css]')
   const css = styleTag === null ? '' : styleTag.textContent
   dom.window.close()
-  return { css, popHtml, popHtmlOpen, popHtmlMore, popHtmlFull, pageHtml, pageHtmlPlugins }
+  return { css, popHtml, popHtmlOpen, popHtmlMore, popHtmlFull, pageHtml }
 }
 
 /** 把图标换成 data URI，file:// 页面才不会破图。 */
@@ -428,17 +400,6 @@ for (const locale of ['zh', 'en']) {
   written.push(pagePng)
 
 
-  if (rendered.pageHtmlPlugins !== '') {
-    const pluginsPage = path.join(work, `settings-plugins${suffix}.html`)
-    fs.writeFileSync(
-      pluginsPage,
-      mkPage(`<div class="frame-page">${rendered.pageHtmlPlugins}</div>`, 660, rendered.css, locale === 'zh' ? 'zh-CN' : 'en'),
-      'utf8',
-    )
-    const pluginsPng = path.join(outDir, `settings-plugins${suffix}.png`)
-    shot(browser, pluginsPage, pluginsPng, 700, 900)
-    written.push(pluginsPng)
-  }
 
   console.log(`  [${locale}] 浮层 ${rendered.popHtml.length} 字符 / 设置页 ${rendered.pageHtml.length} 字符`)
 }

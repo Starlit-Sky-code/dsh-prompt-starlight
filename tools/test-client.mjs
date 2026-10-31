@@ -711,7 +711,7 @@ await act(async () => {
 })
 await tick()
 
-check('设置页有三个标签页（配置 / 技能市场 / 插件市场）', marketContainer.querySelectorAll('.dshsl-tab').length === 3, String(marketContainer.querySelectorAll('.dshsl-tab').length))
+check('设置页有两个标签页（配置 / 技能市场）', marketContainer.querySelectorAll('.dshsl-tab').length === 2, String(marketContainer.querySelectorAll('.dshsl-tab').length))
 check('默认停在「配置」', marketContainer.querySelector('.dshsl-tab[data-on="1"]').textContent !== '' && /配置|Settings/.test(marketContainer.querySelector('.dshsl-tab[data-on="1"]').textContent), marketContainer.querySelector('.dshsl-tab[data-on="1"]').textContent)
 check('默认看不到技能目录', marketContainer.querySelector('.dshsl-market') === null)
 
@@ -796,109 +796,6 @@ await act(async () => {
 check('目录故障时给出原因与重试', /目录服务暂时不可用/.test(marketContainer.querySelector('.dshsl-market').textContent) && /重试|Retry/.test(marketContainer.querySelector('.dshsl-market').textContent), marketContainer.querySelector('.dshsl-market').textContent.slice(0, 80))
 check('故障时不再展示旧条目', marketContainer.querySelectorAll('.dshsl-skill').length === 0)
 
-console.log('\n[7] 插件市场：浏览 format 1 索引（只读）')
-
-const pluginMarketContainer = dom.window.document.createElement('div')
-dom.window.document.body.appendChild(pluginMarketContainer)
-const pluginMarketRoot = ReactDOMClient.createRoot(pluginMarketContainer)
-
-const MARKET_FIXTURE = {
-  ok: true,
-  format: 1,
-  title: '测试市场',
-  index: 'https://example.test/index.json',
-  items: [
-    {
-      name: 'dsh-prompt-starlight',
-      title: '星芒 · 提示词一键优化',
-      description: '把草稿改写成可执行提示词。',
-      author: 'Starlit Sky',
-      category: 'prompt',
-      version: '0.4.1',
-      spec: 'git+https://github.com/Starlit-Sky-code/dsh-prompt-starlight.git#5fc353b486f180219ec1371f6051d05e8cd6e752',
-      page: 'https://github.com/Starlit-Sky-code/dsh-prompt-starlight',
-    },
-    {
-      name: 'dsh-no-spec',
-      title: '',
-      description: '',
-      author: '',
-      category: '',
-      version: '',
-      spec: '',
-      page: '',
-    },
-  ],
-}
-
-let marketMode = 'ok'
-let marketRequest = null
-fetchImpl = (url) => {
-  if (url.includes('/market')) {
-    marketRequest = url
-    if (marketMode === 'error') return { ok: false, error: { code: 'market_format', message: '这不是一份 format 1 插件索引' } }
-    return MARKET_FIXTURE
-  }
-  return manifestPayload()
-}
-
-await act(async () => {
-  pluginMarketRoot.render(React.createElement(SettingsSection, {}))
-})
-await act(async () => {
-  await new Promise((resolve) => setTimeout(resolve, 40))
-})
-
-await act(async () => {
-  pluginMarketContainer.querySelectorAll('.dshsl-tab')[2].dispatchEvent(new dom.window.MouseEvent('click', { bubbles: true }))
-})
-await act(async () => {
-  await new Promise((resolve) => setTimeout(resolve, 40))
-})
-
-// 切到插件市场即自动载入默认索引，不需要先输地址再点按钮
-check('切到插件市场后自动请求默认索引', String(marketRequest).includes('/market?index=https%3A%2F%2F'), String(marketRequest).slice(0, 70))
-check('第三个标签页是插件市场', pluginMarketContainer.querySelector('.dshsl-market [data-market]') !== null)
-const marketCards = Array.from(pluginMarketContainer.querySelectorAll('[data-market] .dshsl-skill'))
-check('渲染出索引里的插件', marketCards.length === 2, String(marketCards.length))
-check('显示标题与分类版本', marketCards[0].textContent.includes('星芒') && marketCards[0].textContent.includes('prompt') && marketCards[0].textContent.includes('v0.4.1'), marketCards[0].textContent.slice(0, 60))
-check('展示索引给的安装参数', marketCards[0].querySelector('.dshsl-skill-ref').textContent.startsWith('git+https://github.com/Starlit-Sky-code/'), marketCards[0].querySelector('.dshsl-skill-ref').textContent.slice(0, 50))
-check('索引没给安装参数时如实标注', /未给出安装参数|no install spec/.test(marketCards[1].textContent), marketCards[1].textContent.slice(0, 60))
-check('页脚说明只读', /只读|read-only/.test(pluginMarketContainer.querySelector('.dshsl-page-foot').textContent))
-
-// 复制安装参数
-let copiedSpec = null
-Object.defineProperty(dom.window.navigator, 'clipboard', {
-  value: { writeText: async (text) => { copiedSpec = text } },
-  configurable: true,
-})
-await act(async () => {
-  marketCards[0].querySelector('.dshsl-btn3').dispatchEvent(new dom.window.MouseEvent('click', { bubbles: true }))
-})
-await act(async () => {
-  await new Promise((resolve) => setTimeout(resolve, 20))
-})
-check('复制的是安装参数', String(copiedSpec).startsWith('git+https://'), String(copiedSpec).slice(0, 40))
-
-// 索引格式错误
-marketMode = 'error'
-await act(async () => {
-  const field = pluginMarketContainer.querySelector('.dshsl-market-search input')
-  const setter = Object.getOwnPropertyDescriptor(dom.window.HTMLInputElement.prototype, 'value').set
-  setter.call(field, 'https://example.test/other.json')
-  field.dispatchEvent(new dom.window.Event('input', { bubbles: true }))
-})
-await act(async () => {
-  await new Promise((resolve) => setTimeout(resolve, 20))
-})
-await act(async () => {
-  pluginMarketContainer.querySelector('.dshsl-market-search button').dispatchEvent(new dom.window.MouseEvent('click', { bubbles: true }))
-})
-await act(async () => {
-  await new Promise((resolve) => setTimeout(resolve, 40))
-})
-check('格式不对时给出原因', /format 1 插件索引/.test(pluginMarketContainer.querySelector('.dshsl-market').textContent), pluginMarketContainer.querySelector('.dshsl-market').textContent.slice(0, 80))
-check('出错时清空旧条目', pluginMarketContainer.querySelectorAll('[data-market] .dshsl-skill').length === 0)
 
 console.log(`\n结果：${passes} 通过 / ${failures} 失败`)
 await act(async () => {
@@ -906,7 +803,6 @@ await act(async () => {
   pageRoot.unmount()
   failRoot.unmount()
   marketRoot.unmount()
-  pluginMarketRoot.unmount()
 })
 dom.window.close()
 process.exit(failures === 0 ? 0 : 1)
