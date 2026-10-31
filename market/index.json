@@ -75,11 +75,11 @@
       "versions": [
         {
           "version": "0.4.1",
-          "publishTimestamp": 1792900018,
+          "publishTimestamp": 1793452968,
           "source": {
             "type": "git",
             "url": "https://github.com/Starlit-Sky-code/dsh-prompt-starlight",
-            "commit": "5fc353b486f180219ec1371f6051d05e8cd6e752"
+            "commit": "ba8fc9c31db82743e1a4a221ae90336265414e75"
           },
           "engines": {}
         }
